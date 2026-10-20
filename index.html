@@ -135,10 +135,42 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 .flash-go{animation:flashgo .4s ease-out}
 @keyframes flashgo{from{filter:brightness(1.8)}to{filter:none}}
 .cdbar.hot i{background:var(--bad)}
+.cdbar.clue i{background:var(--m1)}
+.cdbar.idle i{background:var(--muted)}
 .peek{display:inline-flex;gap:8px;align-items:center;font-weight:600;color:#3c5a4b}
 .levlist{display:flex;flex-direction:column;gap:6px;margin:6px 0}
 .levlist .event{padding:8px 12px}
 .levlist .event b{font-size:1.05rem}
+.live{border-color:var(--amber)}
+.livegrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:14px}
+.livecard{background:var(--panel-2);border:1px solid var(--line);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.lhead{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:center}
+.lhead .h{text-align:right}
+.lscore{font-size:2rem;font-weight:700;background:#000;color:var(--amber);border-radius:6px;padding:2px 14px;min-width:4.2em;text-align:center}
+.lclock{display:flex;gap:10px;align-items:center}
+.lclock .mono{min-width:5.5em;color:var(--amber);font-weight:700}
+.lbar{flex:1;height:6px;background:var(--line);border-radius:3px;overflow:hidden}
+.lbar i{display:block;height:100%;background:var(--amber);transition:width .2s linear}
+.pitch{position:relative;aspect-ratio:105/68;width:100%;max-width:300px;margin:0 auto;border-radius:6px;overflow:hidden;
+  background:repeating-linear-gradient(90deg,#1f7a4a 0 10%,#1b6e43 10% 20%);border:2px solid rgba(255,255,255,.7)}
+.pitch::before{content:"";position:absolute;left:50%;top:0;bottom:0;border-left:2px solid rgba(255,255,255,.7)}
+.pitch::after{content:"";position:absolute;left:50%;top:50%;width:18%;aspect-ratio:1;border:2px solid rgba(255,255,255,.7);border-radius:50%;transform:translate(-50%,-50%)}
+.pitch .ball{position:absolute;width:12px;height:12px;border-radius:50%;background:#fff;box-shadow:0 0 0 2px rgba(0,0,0,.35);transform:translate(-50%,-50%);transition:left .25s linear,top .25s linear;z-index:1}
+.pitch{background-image:repeating-linear-gradient(90deg,#1f7a4a 0 10%,#1b6e43 10% 20%),linear-gradient(transparent,transparent)}
+.lstats{display:flex;flex-direction:column;gap:6px}
+.lstat{display:grid;grid-template-columns:3.2em 1fr 3.2em;gap:6px;align-items:center;font-size:.85rem}
+.lstat .mono:last-of-type{text-align:right}
+.lsl{text-align:center;color:var(--muted);font-size:.75rem;letter-spacing:.08em;text-transform:uppercase}
+.lsb{grid-column:1/-1;display:flex;height:5px;border-radius:3px;overflow:hidden;background:var(--line)}
+.lsb i{display:block;height:100%}
+.feed{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:5px;font-size:.88rem;min-height:9em}
+.feed li{display:grid;grid-template-columns:2.6em 1fr;gap:6px}
+.feed li .mono{color:var(--muted)}
+.feed li.fe-g{color:var(--amber);font-weight:700}
+.feed li.fe-a > span:last-child::before{content:"";display:inline-block;width:8px;height:11px;background:#ffd23f;border-radius:1px;margin-right:6px;vertical-align:-1px}
+.goalflash{animation:goalflash 1s ease-out}
+@keyframes goalflash{0%{box-shadow:0 0 0 0 var(--amber);background:#3a3110}100%{box-shadow:0 0 0 18px transparent}}
+@media (prefers-reduced-motion:reduce){.goalflash{animation:none}.pitch .ball{transition:none}}
 .mute{position:fixed;z-index:20;bottom:calc(12px + env(safe-area-inset-bottom,0px));right:calc(12px + env(safe-area-inset-right,0px));background:var(--panel-2);color:var(--chalk);border:1px solid var(--line);border-radius:999px;padding:8px 14px;font-weight:600;font-size:.85rem}
 .mute:hover{border-color:var(--chalk)}
 .confetti{position:fixed;inset:0;pointer-events:none;z-index:30}
@@ -195,7 +227,7 @@ td.pts{font-family:var(--f-mono);font-weight:700;color:var(--amber);font-size:1.
 // ---------- Plantilla y reglas ----------
 const SLOTS = {POR:1, DEF:4, MED:3, DEL:3, DT:1};
 const POS_NAME = {POR:"Portero", DEF:"Defensa", MED:"Centrocampista", DEL:"Delantero", DT:"Entrenador"};
-const SQUAD = 12, BUDGET = 200, CD = 8, CLUE_EVERY = 5, IDLE_LIMIT = 12;
+const SQUAD = 12, BUDGET = 200, CD = 8, CLUE_T = 6, IDLE_LIMIT = 12;
 const COLORS = ["var(--m1)","var(--m2)","var(--m3)","var(--m4)"];
 const MAXP = 4, MINP = 2;
 const idx = () => S.m.map((_,i)=>i);
@@ -382,22 +414,24 @@ const pidx = x => NAME_IDX[x.n] ?? (-1 - Math.max(0,POSL.indexOf(x.pos)));
 const fromIdx = (i,price) => i>=0 ? {n:POOL[i].n,pos:POOL[i].pos,r:POOL[i].r,price} : {n:POSL[-1-i]==="DT"?"Segundo entrenador":"Canterano",pos:POSL[-1-i],r:62,price};
 const gpack = g => [g.m, NAME_IDX[g.n] ?? -1];
 const gunpack = ([m,i]) => ({m, n: i>=0 ? POOL[i].n : "Canterano"});
-const resPack = r => r && {...r, sh:r.sh.map(gpack), sa:r.sa.map(gpack)};
-const resUnpack = r => r && {...r, sh:r.sh.map(gunpack), sa:r.sa.map(gunpack)};
+const resPack = r => r && {...r, sh:r.sh.map(gpack), sa:r.sa.map(gpack), tl:r.tl&&r.tl.map(e=>[e[0],e[1],e[2],NAME_IDX[e[3]]??-1])};
+const resUnpack = r => r && {...r, sh:r.sh.map(gunpack), sa:r.sa.map(gunpack), tl:r.tl&&r.tl.map(e=>[e[0],e[1],e[2],e[3]>=0?POOL[e[3]].n:"Canterano"])};
 function pack(){
   const o={...S, deck:undefined, dl:S.deck?S.deck.length:0, pz:paused, seq:NET.seq};
   if(S.m) o.m=S.m.map(m=>({b:m.budget,s:m.skips,r:m.roster.map(x=>[pidx(x),x.price,x.r])}));
-  if(S.fx) o.fx=S.fx.map(f=>({h:f.h,a:f.a,j:f.j,res:resPack(f.res)}));
+  if(S.fx) o.fx=S.fx.map(f=>({h:f.h,a:f.a,j:f.j,live:f.live,res:resPack(f.res)}));
   if(S.playoff) o.playoff={...S.playoff,res:resPack(S.playoff.res)};
   // los mensajes de la sala tienen un límite de 4 KB: si no cabe, se quitan los goleadores
-  if(JSON.stringify(o).length>3900 && o.fx) o.fx.forEach(f=>{ if(f.res){ f.res.sh=[]; f.res.sa=[]; } });
+  const bytes=()=>new TextEncoder().encode(JSON.stringify(o)).length;
+  // si no cabe, se quitan primero los goleadores de los partidos más antiguos
+  if(o.fx) for(const f of o.fx){ if(bytes()<=1e9) break; /* sin límite de tamaño en la conexión directa */ if(f.res&&!f.live&&!f.res.tl){ f.res.sh=[]; f.res.sa=[]; } }
   return o;
 }
 function unpack(o){
   const s={...o};
   s.deck=new Array(o.dl||0); paused=!!o.pz;
   if(o.m) s.m=o.m.map(m=>({budget:m.b,skips:m.s,roster:m.r.map(([i,p,r])=>{ const x=fromIdx(i,p); if(r!=null) x.r=r; return x; })}));
-  if(o.fx) s.fx=o.fx.map(f=>({h:f.h,a:f.a,j:f.j,res:resUnpack(f.res)}));
+  if(o.fx) s.fx=o.fx.map(f=>({h:f.h,a:f.a,j:f.j,live:f.live,res:resUnpack(f.res)}));
   if(o.playoff) s.playoff={...o.playoff,res:resUnpack(o.playoff.res)};
   return s;
 }
@@ -413,7 +447,8 @@ const genCode = () => Array.from({length:4},()=>"ABCDEFGHJKMNPQRSTUVWXYZ23456789
 // Acciones: en local y en el anfitrión se ejecutan; un invitado se las manda al anfitrión
 const LOCAL = {
   bid:(mi,inc)=>bid(mi,inc), skip:mi=>skip(mi), mini:(mi,r)=>miniPress(mi,r),
-  clue:()=>revealClue(), pause:()=>togglePause(),
+  pause:()=>togglePause(),
+  lspeed:()=>liveSpeed(), lskip:()=>{ if(S.live&&!S.live.ended) endLive(); }, lclose:()=>{ if(S.live&&S.live.ended) closeLive(); },
   next:()=>{ if(S.phase==="auction"&&S.lot&&S.lot.sold) nextLot(); },
   minigo:()=>{ if(S.lot&&S.lot.mini) miniStart(); },
   play:()=>{ if(S.phase==="league") playNext(); }, all:()=>{ if(S.phase==="league") playAll(); },
@@ -566,7 +601,7 @@ function renderSetup(){
       <ul class="rules">
         <li>Cada mánager tiene <b>${BUDGET} M</b> para fichar <b>${SQUAD}</b>: once titular en 4-3-3 y un <b>entrenador</b>.</li>
         <li class="formation">1 POR · 4 DEF · 3 MED · 3 DEL · 1 DT</li>
-        <li>Cada lote empieza con una pista. Las demás se destapan a mano con <b>Siguiente pista</b> o la barra espaciadora, hasta cuatro.</li>
+        <li>Cada lote empieza con una pista. Mientras nadie puja, una barra va bajando y cada ${CLUE_T} s se destapa otra, hasta cuatro. En cuanto alguien puja, se acaban las pistas nuevas.</li>
         <li>Cada lote tiene un <b>precio de salida</b> al azar, de 2 a 15 M. No tiene nada que ver con lo bueno que sea el jugador.</li>
         <li>La primera puja paga la salida (o salida +5 / +10). Después se sube de <b>+1, +5 o +10 M</b>, con los botones o las teclas.</li>
         <li>En cuanto alguien puja empieza la cuenta: <b>${CD} s</b> desde la última puja, falten pistas o no. A la una, a las dos… ¡vendido!</li>
@@ -643,7 +678,7 @@ function nextLot(){
   // salida al azar, sin relación con la media del jugador
   const reach=Math.max(...S.m.filter(m=>needs(m,pos)>0).map(maxBid));
   const salida=Math.max(1,Math.min(reach, 2+Math.floor(Math.random()*14)));
-  S.lot = {pi:S.deck[S.di], salida, clues:1, bid:0, leader:-1, cd:0, idle:0, skipped:S.m.map(()=>false), sold:null, mini:null, msg:""};
+  S.lot = {pi:S.deck[S.di], salida, clues:1, bid:0, leader:-1, cd:0, idle:0, skipped:S.m.map(()=>false), sold:null, mini:null, msg:"", ct:CLUE_T};
   if(S.sales>=2) S.lot.ev=rollEvent(EVENTS,EV_CHANCE);
   S.phase = "auction"; paused = false;
   save(); renderAuction(true); run();
@@ -709,9 +744,13 @@ function run(){
   timer=setInterval(()=>{
     const L=S&&S.lot; if(!L||L.sold||L.mini||paused||S.phase!=="auction") return;
     // con una puja en marcha la cuenta atrás corre aunque falten pistas
+    // con puja: cuenta atrás de venta. Sin puja: la barra baja y sale la siguiente pista
     if(L.leader>=0){ L.cd--; if(L.cd<=0) return sell(); }
-    else if(L.clues>=4||L.blind){ L.idle++; if(L.idle>=IDLE_LIMIT) return resolveNoBid(); }
-    else return;
+    else if(L.clues<4&&!L.blind){
+      L.ct=(L.ct??CLUE_T)-1;
+      if(L.ct<=0){ L.clues++; L.ct=CLUE_T; if(L.clues===4) L.idle=0; save(); return renderAuction(false,true); }
+    }
+    else { L.idle++; if(L.idle>=IDLE_LIMIT) return resolveNoBid(); }
     tickUI(); broadcast();
   },1000);
 }
@@ -778,16 +817,23 @@ const keysOf = i => NET.role==="local" ? KEYS[i] : KEYS[0];
 const skipKeyOf = i => NET.role==="local" ? SKIPKEYS[i] : SKIPKEYS[0];
 function callText(L){
   const left=4-L.clues, faltan=`falta${left>1?"n":""} ${left} pista${left>1?"s":""}`;
-  if(L.leader<0) return left>0&&!L.blind ? `Pujad o pasad · ${faltan}` : `Sin pujas · se resuelve en ${IDLE_LIMIT-L.idle} s`;
+  if(L.leader<0) return left>0&&!L.blind ? `Siguiente pista en ${L.ct??CLUE_T} s · ${faltan}` : `Sin pujas · se resuelve en ${IDLE_LIMIT-L.idle} s`;
   if(L.cd<=2) return "¡A las dos…!";
   if(L.cd<=5) return "A la una…";
   return `Puja de ${S.names[L.leader]}`;
+}
+// Qué mide la barra: venta (con puja), próxima pista o tiempo para resolver sin pujas
+function barState(L){
+  if(L.sold||L.mini) return {w:0,mode:""};
+  if(L.leader>=0) return {w:L.cd/cdMax(L)*100, mode:L.cd<=3?"hot":""};
+  if(L.clues<4&&!L.blind) return {w:(L.ct??CLUE_T)/CLUE_T*100, mode:"clue"};
+  return {w:(IDLE_LIMIT-L.idle)/IDLE_LIMIT*100, mode:"idle"};
 }
 function tickUI(){
   const L=S.lot, c=document.getElementById("call"), bar=document.getElementById("cd");
   const live=L.leader>=0;
   if(c){ c.textContent=callText(L); c.classList.toggle("hot",live&&L.cd<=2); }
-  if(bar){ bar.style.width = (live ? L.cd/cdMax(L)*100 : 0)+"%"; bar.parentNode.classList.toggle("hot",live&&L.cd<=3); }
+  if(bar){ const b=barState(L); bar.style.width=b.w+"%"; bar.parentNode.className="cdbar "+b.mode; }
   react();
 }
 function teamsHTML(lead=-1){
@@ -840,13 +886,12 @@ function renderAuction(fresh=false, newClue=false){
       <div class="price" id="price">${L.leader>=0?L.bid:L.salida} M</div>
       <div class="leader" style="color:${L.leader>=0?COLORS[L.leader]:"var(--muted)"}">${L.leader>=0?esc(S.names[L.leader]):"Sin pujas"}</div>
       <div class="call ${L.leader>=0&&L.cd<=2&&!L.sold?"hot":""}" id="call">${L.sold?(L.sold.to>=0?"¡Vendido!":"Desierto"):callText(L)}</div>
-      <div class="cdbar ${!L.sold&&L.leader>=0&&L.cd<=3?"hot":""}"><i id="cd" style="width:${!L.sold&&L.leader>=0?L.cd/cdMax(L)*100:0}%"></i></div>
+      <div class="cdbar ${barState(L).mode}"><i id="cd" style="width:${barState(L).w}%"></i></div>
       ${extras.length&&!L.sold?`<span class="note">${extras.join(" · ")}</span>`:""}
       <div class="row">
         ${L.sold
           ? `<button class="btn amber" id="next">Siguiente lote</button>`
-          : `<button class="btn amber sm" id="clue" ${L.clues>=4||paused||L.blind?"disabled":""}>Siguiente pista · Espacio</button>
-             <button class="btn ghost sm" id="pause">${paused?"Reanudar":"Pausa"}</button>`}
+          : `<button class="btn ghost sm" id="pause">${paused?"Reanudar":"Pausa"}</button>`}
       </div>
       <div class="flash">${esc(L.msg)}</div>`}
     </aside>
@@ -867,7 +912,6 @@ function renderAuction(fresh=false, newClue=false){
   if($("minigo")){ $("minigo").onclick=()=>A("minigo"); $("minigo").focus(); }
   if($("pause")) $("pause").onclick=()=>A("pause");
   react();
-  if($("clue")) $("clue").onclick=()=>A("clue");
 }
 document.addEventListener("keydown",e=>{
   if(!S||S.phase!=="auction"||e.target.tagName==="INPUT"||e.repeat) return;
@@ -883,7 +927,7 @@ document.addEventListener("keydown",e=>{
   }
   row.forEach((ks,r)=>{const j=ks.indexOf(k); if(j>=0&&owner(r)>=0) A("bid",owner(r),INCS[j]);});
   const si=sk.indexOf(k); if(si>=0&&owner(si)>=0) A("skip",owner(si));
-  if(k===" "&&L&&!L.sold){e.preventDefault();A("clue");}
+
 });
 
 // ---------- Liga ----------
@@ -969,20 +1013,25 @@ function playoffHTML(){
   </section>`;
 }
 function playJornada(){
-  const j=S.fx[S.played].j;
+  const j=S.fx[S.played].j, ms=[];
   const ev=rollEvent(LEVENTS,LEV_CHANCE); if(ev){ S.lev=S.lev||[]; S.lev.push({j,...ev}); }
-  while(S.played<S.fx.length && S.fx[S.played].j===j){ playMatch(S.fx[S.played]); S.played++; }
+  while(S.played<S.fx.length && S.fx[S.played].j===j){ playMatch(S.fx[S.played]); ms.push(S.played); S.played++; }
+  return ms;
 }
 function playNext(){
+  if(S.live){ if(!S.live.ended) return; closeLive(); }
   if(S.played>=S.fx.length) return;
-  playJornada();
-  if(S.played===S.fx.length) S.phase="final";
+  startLive(playJornada());
   save(); renderLeague();
 }
-function playAll(){ while(S.played<S.fx.length) playJornada(); S.phase="final"; save(); renderLeague(); }
+function playAll(){
+  if(S.live) closeLive();
+  while(S.played<S.fx.length) playJornada();
+  S.phase="final"; save(); renderLeague();
+}
 function standings(){
   const T=S.m.map((_,i)=>({i,pj:0,g:0,e:0,p:0,gf:0,gc:0,pts:0}));
-  S.fx.filter(f=>f.res).forEach(f=>{
+  S.fx.filter(finished).forEach(f=>{
     const h=T[f.h],a=T[f.a],{gh,ga}=f.res;
     h.pj++;a.pj++;h.gf+=gh;h.gc+=ga;a.gf+=ga;a.gc+=gh;
     if(gh>ga){h.g++;h.pts+=3;a.p++;} else if(gh<ga){a.g++;a.pts+=3;h.p++;} else {h.e++;a.e++;h.pts++;a.pts++;}
@@ -990,14 +1039,14 @@ function standings(){
   return T.sort((x,y)=>y.pts-x.pts||(y.gf-y.gc)-(x.gf-x.gc)||y.gf-x.gf);
 }
 function scorers(){
-  const c={}; S.fx.filter(f=>f.res).forEach(f=>{
+  const c={}; S.fx.filter(finished).forEach(f=>{
     f.res.sh.forEach(g=>{const k=g.n+"|"+f.h;c[k]=(c[k]||0)+1});
     f.res.sa.forEach(g=>{const k=g.n+"|"+f.a;c[k]=(c[k]||0)+1});
   });
   return Object.entries(c).map(([k,v])=>{const[n,t]=k.split("|");return{n,t:+t,g:v}}).sort((a,b)=>b.g-a.g).slice(0,6);
 }
 function renderLeague(){
-  const T=standings(), done=S.played>=S.fx.length;
+  const T=standings(), done=S.played>=S.fx.length&&!(S.live&&!S.live.ended);
   let champ=null;
   if(done){
     const lead=T.filter(t=>t.pts===T[0].pts);
@@ -1013,14 +1062,15 @@ function renderLeague(){
     const rest=idx().filter(x=>!busy.has(x));
     const evs=first?(S.lev||[]).filter(e=>e.j===f.j):[];
     const head=first?`<div class="jor">Jornada ${f.j}${rest.length?` · descansa ${rest.map(x=>esc(S.names[x])).join(", ")}`:""}</div>${evs.length?`<div class="levlist">${evs.map(e=>evHTML(e,LEVENTS)).join("")}</div>`:""}`:"";
-    const sc=f.res?`${f.res.gh} – ${f.res.ga}`:"vs";
-    const gl=f.res?`<div class="gl"><div>${f.res.sh.map(g=>`${esc(g.n)} ${g.m}'`).join("<br>")}</div><div>${f.res.sa.map(g=>`${g.m}' ${esc(g.n)}`).join("<br>")}</div></div>`:"";
+    const sc=f.live?"en juego":f.res?`${f.res.gh} – ${f.res.ga}`:"vs";
+    const gl=finished(f)?`<div class="gl"><div>${f.res.sh.map(g=>`${esc(g.n)} ${g.m}'`).join("<br>")}</div><div>${f.res.sa.map(g=>`${g.m}' ${esc(g.n)}`).join("<br>")}</div></div>`:"";
     return `${head}<div class="match" id="m${k}"><span class="tn h" style="color:${COLORS[f.h]}">${esc(S.names[f.h])}</span><span class="sc mono">${sc}</span><span class="tn" style="color:${COLORS[f.a]}">${esc(S.names[f.a])}</span>${gl}</div>`;
   }).join("");
   const top=scorers();
   app.innerHTML=`
   ${champ?`<section class="champ" id="champ" style="--c:${COLORS[champ.i]}"><span class="label">Campeón de liga${champ.po?" · tras el partido de desempate":""}</span><h1>${esc(S.names[champ.i])}</h1><span class="note">Entrenador: ${esc(S.m[champ.i].roster.find(x=>x.pos==="DT").n)}</span></section>`
          :`<header class="hero"><span class="label">Subasta cerrada · ${S.sales} fichajes</span><h1>La <span>Liga</span></h1></header>`}
+  ${S.live?liveHTML():""}
   ${S.playoff?playoffHTML():""}
   <section class="xi">${S.m.map((m,i)=>{const P=power(i);const order=["POR","DEF","MED","DEL","DT"];
     return `<div class="team" style="--c:${COLORS[i]}">
@@ -1032,7 +1082,7 @@ function renderLeague(){
     <div class="box">
       <div class="row" style="justify-content:space-between"><span class="label">Calendario</span>
         <div class="row">${done?`<button class="btn amber sm" id="again">${NET.role==="client"?"Salir":"Nueva subasta"}</button><button class="btn ghost sm" id="replay">Repetir liga</button>`
-          :`<button class="btn amber sm" id="play">Jugar jornada ${S.fx[S.played].j}</button><button class="btn ghost sm" id="all">Simular todo</button>`}</div></div>
+          :S.live&&!S.live.ended?"":`<button class="btn amber sm" id="play">Jugar jornada ${S.fx[S.played]?S.fx[S.played].j:""} en directo</button><button class="btn ghost sm" id="all">Simular todo</button>`}</div></div>
       ${fxHTML}
     </div>
     <div style="display:flex;flex-direction:column;gap:16px;min-width:0">
@@ -1050,6 +1100,9 @@ function renderLeague(){
   if($("play")) $("play").onclick=()=>A("play");
   if($("all")) $("all").onclick=()=>A("all");
   if($("po")) $("po").onclick=()=>A("po");
+  if($("lspeed")) $("lspeed").onclick=()=>A("lspeed");
+  if($("lskip")) $("lskip").onclick=()=>A("lskip");
+  if($("lclose")) $("lclose").onclick=()=>A("lclose");
   if($("replay")) $("replay").onclick=()=>A("replay");
   if($("again")) $("again").onclick=()=>{
     if(NET.role==="client") return leaveOnline();
@@ -1059,7 +1112,94 @@ function renderLeague(){
   };
   react();
 }
-function replayLeague(){ S.fx.forEach(f=>f.res=null); S.played=0; S.playoff=null; S.lev=[]; S.phase="league"; save(); renderLeague(); }
+function replayLeague(){ clearInterval(liveTimer); S.live=null; S.fx.forEach(f=>{f.res=null;f.live=false;}); S.played=0; S.playoff=null; S.lev=[]; S.phase="league"; save(); renderLeague(); }
+
+// ---------- Partidos en directo (estilo manager) ----------
+const TICK_MS = 230;
+let liveTimer = null;
+const finished = f => f.res && !f.live;
+const TXT = {
+  g:["¡GOOOL de {n}!","¡{n} la manda a la red!","¡Golazo de {n}! La grada se viene abajo.","¡{n} no perdona!"],
+  f:["{n} dispara… fuera por poco.","Disparo de {n} que se marcha alto.","{n} lo intenta desde lejos. Ni cerca.","Cabezazo de {n} que se va desviado."],
+  s:["¡Paradón! El portero le saca el tiro a {n}.","{n} remata y el portero atrapa sin problemas.","Mano a mano de {n}… ¡y para el portero!"],
+  p:["¡Al palo! {n} se queda con la miel en los labios.","¡Larguero! El disparo de {n} hace temblar la portería."],
+  a:["Amarilla para {n} por protestar.","Tarjeta para {n} tras una entrada a destiempo.","{n} ve la amarilla por perder tiempo."],
+};
+function commentary(e){ const v=TXT[e[1]]; return v[(e[0]+String(e[3]).length)%v.length].replace("{n}",esc(e[3])); }
+function buildTimeline(f){
+  const H=power(f.h), A=power(f.a), r=f.res, tl=[];
+  r.sh.forEach(g=>tl.push([g.m,"g",0,g.n])); r.sa.forEach(g=>tl.push([g.m,"g",1,g.n]));
+  [[0,f.h,H,A],[1,f.a,A,H]].forEach(([side,t,P,O])=>{
+    for(let i=poisson(Math.max(1.5,4+(P.att-O.def)/4));i>0;i--) tl.push([1+Math.floor(Math.random()*90),pickR(["f","f","s","s","p"]),side,scorer(t)]);
+    const pool=S.m[t].roster.filter(x=>x.pos!=="POR"&&x.pos!=="DT");
+    for(let i=poisson(1.6);i>0;i--) tl.push([1+Math.floor(Math.random()*90),"a",side,pickR(pool).n]);
+  });
+  tl.sort((a,b)=>a[0]-b[0]);
+  const mid=t=>avg(S.m[t].roster.filter(x=>x.pos==="MED").map(x=>x.r));
+  r.tl=tl; r.pos=Math.round(Math.max(32,Math.min(68,50+(mid(f.h)-mid(f.a))*1.4+(Math.random()-.5)*8)));
+}
+function startLive(ms){
+  S.live={j:S.fx[ms[0]].j, ms, min:0, speed:1, pause:0, ended:false};
+  ms.forEach(k=>{ buildTimeline(S.fx[k]); S.fx[k].live=true; });
+  runLive();
+}
+function runLive(){
+  clearInterval(liveTimer); liveTimer=null;
+  if(NET.role==="client"||!S.live||S.live.ended) return;
+  liveTimer=setInterval(()=>{
+    const L=S.live; if(!L||L.ended){ clearInterval(liveTimer); return; }
+    if(L.pause>0) L.pause--;
+    else { L.min++; if(L.min===45) L.pause=8; }
+    if(L.min>=90) return endLive();
+    save(); renderLeague();
+  }, TICK_MS/S.live.speed);
+}
+function endLive(){
+  clearInterval(liveTimer); liveTimer=null;
+  const L=S.live; if(!L) return;
+  L.min=90; L.ended=true; L.pause=0;
+  L.ms.forEach(k=>{ S.fx[k].live=false; });
+  if(S.played>=S.fx.length) S.phase="final";
+  save(); renderLeague();
+}
+function closeLive(){
+  if(!S.live) return;
+  if(!S.live.ended) endLive();
+  S.live.ms.forEach(k=>{ const r=S.fx[k].res; if(r){ delete r.tl; delete r.pos; } });
+  S.live=null; save(); renderLeague();
+}
+function liveSpeed(){ if(!S.live||S.live.ended) return; S.live.speed=S.live.speed===1?3:1; save(); runLive(); renderLeague(); }
+function liveHTML(){
+  const L=S.live, m=L.min, n=i=>esc(S.names[i]);
+  const cards=L.ms.map((k,ci)=>{
+    const f=S.fx[k], r=f.res, vis=(r.tl||[]).filter(e=>e[0]<=m);
+    const cnt=(type,side)=>vis.filter(e=>(type.includes(e[1]))&&e[2]===side).length;
+    const gh=cnt("g",0), ga=cnt("g",1);
+    // el balón va hacia la portería del que acaba de llegar; si no, deambula según la posesión
+    const last=[...vis].reverse().find(e=>m-e[0]<=2);
+    let x,y;
+    if(last&&last[1]!=="a"){ x=last[2]===0?(last[1]==="g"?96:86):(last[1]==="g"?4:14); y=last[1]==="g"?50:35+((last[0]*13)%30); }
+    else { x=50+(r.pos-50)*.5+28*Math.sin(m*.9+ci*1.3); y=50+32*Math.sin(m*1.7+ci*2.1); }
+    if(m===0||L.pause) { x=50; y=50; }
+    const stat=(label,a,b,pct)=>{ const tot=a+b||1, wa=pct?a:Math.round(a/tot*100); return `<div class="lstat"><span class="mono">${a}${pct?"%":""}</span><span class="lsl">${label}</span><span class="mono">${b}${pct?"%":""}</span><div class="lsb"><i style="width:${wa}%;background:${COLORS[f.h]}"></i><i style="width:${100-wa}%;background:${COLORS[f.a]}"></i></div></div>`; };
+    const clock=L.ended?"Final":(m===45&&L.pause?"Descanso":m+"'");
+    const feed=[...vis].reverse().slice(0,6).map(e=>`<li class="fe-${e[1]}"><span class="mono">${e[0]}'</span><span>${commentary(e)} <span class="note">· ${n(e[2]?f.a:f.h)}</span></span></li>`).join("")
+      || `<li><span class="mono">0'</span><span>Rueda el balón.</span></li>`;
+    return `<div class="livecard" id="live${k}">
+      <div class="lhead"><span class="tn h" style="color:${COLORS[f.h]}">${n(f.h)}</span><span class="lscore mono" id="ls${k}">${gh} – ${ga}</span><span class="tn" style="color:${COLORS[f.a]}">${n(f.a)}</span></div>
+      <div class="lclock"><span class="mono">${clock}</span><div class="lbar"><i style="width:${m/90*100}%"></i></div></div>
+      <div class="pitch"><div class="ball" style="left:${x}%;top:${y}%"></div></div>
+      <div class="lstats">${stat("Posesión",r.pos,100-r.pos,true)}${stat("Tiros",cnt("gfsp",0),cnt("gfsp",1))}${stat("A puerta",cnt("gs",0),cnt("gs",1))}${stat("Amarillas",cnt("a",0),cnt("a",1))}</div>
+      <ol class="feed">${feed}</ol>
+    </div>`;
+  }).join("");
+  return `<section class="box live">
+    <div class="row" style="justify-content:space-between"><span class="label">Jornada ${L.j} · ${L.ended?"terminada":"en directo"}</span>
+      <div class="row">${L.ended?`<button class="btn amber sm" id="lclose">Continuar</button>`
+        :`<button class="btn ghost sm" id="lspeed">Velocidad x${L.speed}</button><button class="btn ghost sm" id="lskip">Ver resultado final</button>`}</div></div>
+    <div class="livegrid">${cards}</div>
+  </section>`;
+}
 
 // ---------- Eventos aleatorios ----------
 // Se guardan como datos pequeños {k, t, t2, p, q, v} y el texto se genera al pintar
@@ -1202,7 +1342,7 @@ function react(){
     const played=S.played||0, po=!!(S.playoff&&S.playoff.res), nlev=(S.lev||[]).length;
     if(seen.phase==="league"){
       if(nlev>seen.nlev){ const e=S.lev[S.lev.length-1]; (LEVENTS[e.k]&&LEVENTS[e.k].troll?SFX.troll:SFX.event)(); }
-      if(played>seen.played){
+      if(played>seen.played&&!S.live){
         SFX.whistle();
         const goals=S.fx.slice(seen.played,played).reduce((s,f)=>s+(f.res?f.res.gh+f.res.ga:0),0);
         for(let g=0;g<Math.min(goals,4);g++) SFX.goal(.9+g*.35);
@@ -1210,9 +1350,18 @@ function react(){
       }
       if(po&&!seen.po) SFX.whistle();
     }
+    const LV=S.live;
+    if(LV&&seen.liveJ!==LV.j+"-"+S.played){ SFX.whistle(); }
+    if(LV){
+      const g=LV.ms.reduce((s,k)=>s+((S.fx[k].res.tl||[]).filter(e=>e[1]==="g"&&e[0]<=LV.min).length),0);
+      if(seen.liveJ===LV.j+"-"+S.played&&g>seen.liveG){ SFX.goal(); LV.ms.forEach(k=>flashEl("live"+k,"goalflash")); }
+      if(seen.liveJ===LV.j+"-"+S.played&&LV.min>=45&&seen.liveMin<45) SFX.whistle();
+      if(LV.ended&&!seen.liveEnd) SFX.whistle();
+      seen.liveG=g; seen.liveMin=LV.min; seen.liveEnd=LV.ended; seen.liveJ=LV.j+"-"+S.played;
+    } else { seen.liveJ=null; seen.liveEnd=false; }
     const champ=!!document.getElementById("champ");
     if(champ&&!seen.champ){ setTimeout(()=>{ SFX.champ(); confetti(); },seen.phase==="league"?900:0); }
-    seen={phase:"league",played,po,nlev,champ};
+    seen={...seen,phase:"league",played,po,nlev,champ};
   } else seen={phase:S.phase};
 }
 function confetti(){
@@ -1237,7 +1386,7 @@ function route(){
     const M=S.lot.mini; if(M&&!S.lot.sold){ M.phase="ready"; M.pressed=[]; M.early=null; }
     renderAuction(true); if(!S.lot.sold) run();
   }
-  else renderLeague();
+  else { renderLeague(); runLive(); }
 }
 { const b=document.getElementById("mute"); b.onclick=toggleMute; b.textContent=muted?"Sonido: no":"Sonido: sí"; b.setAttribute("aria-pressed",String(!muted)); }
 renderSetup();
