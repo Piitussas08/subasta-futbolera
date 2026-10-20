@@ -103,7 +103,8 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 .paddle{border:1.5px solid var(--line);border-radius:8px;padding:12px;display:flex;flex-direction:column;gap:8px;background:var(--panel);min-width:0}
 .paddle .pn{font-family:var(--f-display);font-weight:800;font-size:1.2rem;text-transform:uppercase;color:var(--c);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .paddle .why{font-size:.8rem;color:var(--muted);min-height:1.2em}
-.bids{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.bids{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+@media (max-width:380px){.bids{grid-template-columns:repeat(2,1fr)}}
 .bid{border:0;border-radius:6px;padding:10px 4px;background:var(--c);color:#0b1612;font-weight:800;font-family:var(--f-mono);display:flex;flex-direction:column;align-items:center;gap:2px;touch-action:manipulation}
 .bid kbd{font-family:var(--f-mono);font-size:.68rem;font-weight:700;opacity:.7;border:1px solid rgba(0,0,0,.35);border-radius:3px;padding:0 4px}
 .bid:disabled{opacity:.25;cursor:not-allowed}
@@ -227,12 +228,12 @@ td.pts{font-family:var(--f-mono);font-weight:700;color:var(--amber);font-size:1.
 // ---------- Plantilla y reglas ----------
 const SLOTS = {POR:1, DEF:4, MED:3, DEL:3, DT:1};
 const POS_NAME = {POR:"Portero", DEF:"Defensa", MED:"Centrocampista", DEL:"Delantero", DT:"Entrenador"};
-const SQUAD = 12, BUDGET = 200, CD = 8, CLUE_T = 6, IDLE_LIMIT = 12;
+const SQUAD = 12, BUDGET = 1000, MINP_SLOT = 10, CD = 8, CLUE_T = 6, IDLE_LIMIT = 12;
 const COLORS = ["var(--m1)","var(--m2)","var(--m3)","var(--m4)"];
 const MAXP = 4, MINP = 2;
 const idx = () => S.m.map((_,i)=>i);
-const KEYS = [["q","w","e"],["v","b","n"],["i","o","p"],["1","2","3"]];
-const INCS = [1,5,10];
+const KEYS = [["q","w","e","r"],["z","x","c","v"],["y","u","i","o"],["1","2","3","4"]];
+const INCS = [10,20,50,100];
 
 // ---------- Jugadores: r = media oculta, p = pistas de más difícil a más fácil ----------
 const POOL = [
@@ -342,10 +343,10 @@ const avg = a => a.length ? a.reduce((s,x)=>s+x,0)/a.length : 60;
 // En online solo el anfitrión guarda; cada cambio suyo se envía a la sala
 const save = () => {
   if(NET.role==="client") return;
-  try{ localStorage.setItem("subasta-v3", JSON.stringify(S)); }catch(e){}
+  try{ localStorage.setItem("subasta-v4", JSON.stringify(S)); }catch(e){}
   broadcast();
 };
-const load = () => { try{ return JSON.parse(localStorage.getItem("subasta-v3")||"null"); }catch(e){ return null; } };
+const load = () => { try{ return JSON.parse(localStorage.getItem("subasta-v4")||"null"); }catch(e){ return null; } };
 
 let S = null, timer = null, paused = false;
 let names = ["Ana","Leo","Mario"], laps = 2;
@@ -602,12 +603,12 @@ function renderSetup(){
         <li>Cada mánager tiene <b>${BUDGET} M</b> para fichar <b>${SQUAD}</b>: once titular en 4-3-3 y un <b>entrenador</b>.</li>
         <li class="formation">1 POR · 4 DEF · 3 MED · 3 DEL · 1 DT</li>
         <li>Cada lote empieza con una pista. Mientras nadie puja, una barra va bajando y cada ${CLUE_T} s se destapa otra, hasta cuatro. En cuanto alguien puja, se acaban las pistas nuevas.</li>
-        <li>Cada lote tiene un <b>precio de salida</b> al azar, de 2 a 15 M. No tiene nada que ver con lo bueno que sea el jugador.</li>
-        <li>La primera puja paga la salida (o salida +5 / +10). Después se sube de <b>+1, +5 o +10 M</b>, con los botones o las teclas.</li>
+        <li>Cada lote tiene un <b>precio de salida</b> al azar, de 10 a 75 M. No tiene nada que ver con lo bueno que sea el jugador.</li>
+        <li>La primera puja paga la salida (o salida +20 / +50 / +100). Después se sube de <b>+10, +20, +50 o +100 M</b>, con los botones o las teclas.</li>
         <li>En cuanto alguien puja empieza la cuenta: <b>${CD} s</b> desde la última puja, falten pistas o no. A la una, a las dos… ¡vendido!</li>
         <li>Cada mánager tiene <b>${SKIPS} skips</b> por partida (teclas ${SKIPKEYS.join(" ").toUpperCase()}). Si nadie puja, el que no haya pasado <b>se queda el jugador por el precio de salida</b>, también si ya no le quedan skips.</li>
         <li>Si son varios los que no pujan ni pasan, se juegan un <b>minijuego de reflejos</b>: el más lento se lo queda por la salida.</li>
-        <li>No puedes pujar por un puesto que ya tienes completo, y siempre te tiene que quedar <b>1 M por hueco libre</b>.</li>
+        <li>No puedes pujar por un puesto que ya tienes completo, y siempre te tiene que quedar <b>10 M por hueco libre</b>.</li>
         <li>La calidad real (media) solo se descubre al venderse. Si todos pasan, el lote queda desierto.</li>
         <li>Ojo: no todos son cracks. Hay fichajes fallidos y auténticos timos con historias de equipo grande. La pista te puede engañar.</li>
         <li>Los huecos que queden vacíos al final se rellenan con canteranos de media 62.</li>
@@ -648,7 +649,7 @@ function renderSetup(){
 function readNames(){ names=names.map((_,i)=>{ const el=document.getElementById("m"+i); return (el&&el.value.trim())||"Mánager "+(i+1); }); }
 
 // ---------- Subasta ----------
-const SKIPS = 3, SKIPKEYS = ["r","m","l","4"];
+const SKIPS = 3, SKIPKEYS = ["t","b","p","5"];
 function startAuction(){
   const online = NET.role==="host" ? {code:S.code, seats:S.seats} : {};
   S = {phase:"auction", names, laps, m:names.map(()=>({budget:BUDGET, roster:[], skips:SKIPS})), deck:shuffle(POOL.map((_,i)=>i)), di:-1, lot:null, sales:0, ...online};
@@ -657,8 +658,9 @@ function startAuction(){
 const count = (m,pos) => m.roster.filter(x=>x.pos===pos).length;
 const needs = (m,pos) => SLOTS[pos]-count(m,pos);
 const free = m => SQUAD - m.roster.length;
-const maxBid = m => m.budget - (free(m)-1);
-function anyoneNeeds(pos){ return S.m.some(m=>needs(m,pos)>0 && maxBid(m)>=1); }
+// siempre tiene que quedar 10 M por cada hueco libre
+const maxBid = m => m.budget - (free(m)-1)*MINP_SLOT;
+function anyoneNeeds(pos){ return S.m.some(m=>needs(m,pos)>0 && maxBid(m)>=MINP_SLOT); }
 // Puede entrar en este lote: necesita el puesto y llega al precio de salida
 const eligible = mi => { const L=S.lot, m=S.m[mi]; return needs(m,POOL[L.pi].pos)>0 && maxBid(m)>=L.salida; };
 // Quien no puja ni pasa: si nadie puja, a estos les toca el jugador
@@ -677,13 +679,13 @@ function nextLot(){
   const pos=POOL[S.deck[S.di]].pos;
   // salida al azar, sin relación con la media del jugador
   const reach=Math.max(...S.m.filter(m=>needs(m,pos)>0).map(maxBid));
-  const salida=Math.max(1,Math.min(reach, 2+Math.floor(Math.random()*14)));
+  const salida=Math.max(MINP_SLOT,Math.min(reach, 10+5*Math.floor(Math.random()*14)));
   S.lot = {pi:S.deck[S.di], salida, clues:1, bid:0, leader:-1, cd:0, idle:0, skipped:S.m.map(()=>false), sold:null, mini:null, msg:"", ct:CLUE_T};
   if(S.sales>=2) S.lot.ev=rollEvent(EVENTS,EV_CHANCE);
   S.phase = "auction"; paused = false;
   save(); renderAuction(true); run();
 }
-const priceFor = inc => S.lot.leader<0 ? S.lot.salida + (inc===1?0:inc) : S.lot.bid+inc;
+const priceFor = inc => S.lot.leader<0 ? S.lot.salida + (inc===INCS[0]?0:inc) : S.lot.bid+inc;
 function why(mi){
   const L=S.lot, m=S.m[mi], pos=POOL[L.pi].pos;
   if(needs(m,pos)<=0) return `Ya tiene ${pos==="DT"?"entrenador":"todos los "+pos}`;
@@ -812,7 +814,7 @@ function miniHTML(){
 }
 
 // ---------- Pantalla de subasta ----------
-// En online cada uno usa Q W E y R para su propio mánager
+// En online cada uno usa Q W E R para pujar y T para el skip con su propio mánager
 const keysOf = i => NET.role==="local" ? KEYS[i] : KEYS[0];
 const skipKeyOf = i => NET.role==="local" ? SKIPKEYS[i] : SKIPKEYS[0];
 function callText(L){
@@ -865,7 +867,7 @@ function renderAuction(fresh=false, newClue=false){
   const stampHTML=L.sold?`<div class="stamp ${L.sold.to<0?"desierto":""}" id="stamp">${L.sold.to<0?"Desierto":"Vendido"}</div>`:"";
   const evBox=L.ev?evHTML(L.ev,EVENTS,"evbanner"):"";
   const peekHTML=L.peek&&!L.sold?`<div class="peek"><span class="rating">${p.r}</span> media filtrada por el ojeador</div>`:"";
-  const extras=[L.fast&&"Lote relámpago: 4 s entre pujas", L.tax&&"Comisión: +5 M para quien gane la puja", L.blind&&"Sin más pistas"].filter(Boolean);
+  const extras=[L.fast&&"Lote relámpago: 4 s entre pujas", L.tax&&"Comisión: +25 M para quien gane la puja", L.blind&&"Sin más pistas"].filter(Boolean);
   const showMini=L.mini&&!L.sold;
   if(showMini&&L.mini.phase==="go"&&miniKey!==S.di+"-"+S.sales){ miniKey=S.di+"-"+S.sales; miniT0=performance.now(); }
   app.innerHTML=`
@@ -1106,7 +1108,7 @@ function renderLeague(){
   if($("replay")) $("replay").onclick=()=>A("replay");
   if($("again")) $("again").onclick=()=>{
     if(NET.role==="client") return leaveOnline();
-    try{localStorage.removeItem("subasta-v3")}catch(e){} saved=null;
+    try{localStorage.removeItem("subasta-v4")}catch(e){} saved=null;
     if(NET.role==="host"){ S={phase:"lobby",code:S.code,seats:S.seats,names:S.seats.map(s=>s.name),laps:S.laps}; save(); return renderLobby(); }
     S=null; renderSetup();
   };
@@ -1207,12 +1209,12 @@ const EV_CHANCE = 0.3, LEV_CHANCE = 0.4;
 const pickR = a => a[Math.floor(Math.random()*a.length)];
 const nm = i => esc(S.names[i]||"?");
 const EVENTS = {
-  lluvia:   {troll:false, title:"Lluvia de millones", text:()=>"La tele paga los derechos. Todos los mánagers reciben +10 M.",
-             apply(){ S.m.forEach(m=>m.budget+=10); return {}; }},
-  patrocinio:{troll:false, title:"Patrocinador dudoso", text:e=>`${nm(e.t)} firma con una casa de apuestas de Malta: +20 M.`,
-             apply(){ const t=pickR(idx()); S.m[t].budget+=20; return {t}; }},
+  lluvia:   {troll:false, title:"Lluvia de millones", text:()=>"La tele paga los derechos. Todos los mánagers reciben +50 M.",
+             apply(){ S.m.forEach(m=>m.budget+=50); return {}; }},
+  patrocinio:{troll:false, title:"Patrocinador dudoso", text:e=>`${nm(e.t)} firma con una casa de apuestas de Malta: +100 M.`,
+             apply(){ const t=pickR(idx()); S.m[t].budget+=100; return {t}; }},
   hacienda: {troll:true, title:"Hacienda llama a la puerta", text:e=>`Inspección en las cuentas de ${nm(e.t)}: pierde ${e.v} M.`,
-             apply(){ const c=idx().filter(i=>S.m[i].budget-free(S.m[i])>=1); if(!c.length) return null; const t=pickR(c); const v=Math.min(15,S.m[t].budget-free(S.m[t])); S.m[t].budget-=v; return {t,v}; }},
+             apply(){ const spare=i=>S.m[i].budget-free(S.m[i])*MINP_SLOT; const c=idx().filter(i=>spare(i)>=10); if(!c.length) return null; const t=pickR(c); const v=Math.min(75,spare(t)); S.m[t].budget-=v; return {t,v}; }},
   relampago:{troll:false, title:"Lote relámpago", text:()=>"En este lote solo hay 4 segundos entre puja y puja.",
              apply(){ S.lot.fast=true; return {}; }},
   ciegas:   {troll:true, title:"Subasta a ciegas", text:()=>"El ojeador se ha dormido: este jugador no tiene más pistas.",
@@ -1221,12 +1223,12 @@ const EVENTS = {
              apply(){ S.lot.clues=4; return {}; }},
   chivatazo:{troll:false, title:"Chivatazo del ojeador", text:()=>"Se sabe la media de este jugador antes de pujar.",
              apply(){ S.lot.peek=true; return {}; }},
-  rebajas:  {troll:false, title:"Rebajas de enero", text:()=>"Este lote sale por 1 M.",
-             apply(){ S.lot.salida=1; return {}; }},
+  rebajas:  {troll:false, title:"Rebajas de enero", text:()=>"Este lote sale por 10 M.",
+             apply(){ S.lot.salida=MINP_SLOT; return {}; }},
   farruco:  {troll:true, title:"El agente se pone farruco", text:()=>"Precio de salida doblado. Nadie sabe por qué.",
-             apply(){ const pos=POOL[S.lot.pi].pos; const reach=Math.max(...S.m.filter(m=>needs(m,pos)>0).map(maxBid)); S.lot.salida=Math.max(1,Math.min(reach,S.lot.salida*2)); return {}; }},
-  comision: {troll:true, title:"Comisión del representante", text:()=>"Quien gane este lote por puja paga 5 M extra al agente.",
-             apply(){ S.lot.tax=5; return {}; }},
+             apply(){ const pos=POOL[S.lot.pi].pos; const reach=Math.max(...S.m.filter(m=>needs(m,pos)>0).map(maxBid)); S.lot.salida=Math.max(MINP_SLOT,Math.min(reach,S.lot.salida*2)); return {}; }},
+  comision: {troll:true, title:"Comisión del representante", text:()=>"Quien gane este lote por puja paga 25 M extra al agente.",
+             apply(){ S.lot.tax=25; return {}; }},
   skipgift: {troll:false, title:"Skip en el chándal", text:e=>`${nm(e.t)} encuentra un skip olvidado en el bolsillo: +1 skip.`,
              apply(){ const t=pickR(idx()); S.m[t].skips++; return {t}; }},
   skiprob:  {troll:true, title:"Robo en el vestuario", text:e=>`A ${nm(e.t)} le han robado un skip mientras se duchaba.`,
