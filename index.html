@@ -184,6 +184,42 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 .skipbtn:disabled{opacity:.3;cursor:not-allowed}
 .skipbtn kbd{font-family:var(--f-mono);font-size:.68rem;border:1px solid var(--line);border-radius:3px;padding:0 4px}
 .minibox{display:flex;flex-direction:column;gap:12px;line-height:1.45}
+.duel{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:center}
+.duel .role{background:var(--panel);border:2px solid var(--c);border-radius:8px;padding:10px;display:flex;flex-direction:column;gap:2px;align-items:center;text-align:center;min-width:0}
+.duel .role b{font-family:var(--f-display);font-weight:900;font-size:clamp(1.3rem,3.2vw,1.9rem);text-transform:uppercase;color:var(--c);overflow:hidden;text-overflow:ellipsis;max-width:100%;white-space:nowrap}
+.duel .role .label{color:var(--chalk);letter-spacing:.2em}
+.duel .you{font-size:.7rem;font-weight:700;background:var(--c);color:#0b1612;border-radius:3px;padding:0 6px;text-transform:uppercase}
+.vsx{font-family:var(--f-display);font-weight:900;font-size:1.3rem;color:var(--muted);text-transform:uppercase}
+.pscore{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:center}
+.pside{display:flex;flex-direction:column;gap:4px;min-width:0}
+.pside.r{align-items:flex-end;text-align:right}
+.pnum{font-size:1.8rem;font-weight:700;color:var(--amber)}
+.pdots{display:flex;gap:4px}
+.pdot{width:12px;height:12px;border-radius:50%;border:2px solid var(--line)}
+.pdot.in{background:var(--ok);border-color:var(--ok)}
+.pdot.out{background:var(--bad);border-color:var(--bad)}
+.pgoal{display:grid;grid-template-columns:repeat(3,1fr);height:84px;border:5px solid var(--chalk);border-bottom:none;border-radius:4px 4px 0 0;background:repeating-linear-gradient(45deg,rgba(238,244,236,.1) 0 2px,transparent 2px 10px)}
+.pgoal .zone{position:relative;border-right:1px dashed rgba(238,244,236,.25)}
+.pgoal .zone:last-child{border-right:none}
+.pball{position:absolute;left:50%;top:45%;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 0 0 2px #0b1612;transform:translate(-50%,-50%)}
+.pball.anim{animation:shot .45s ease-out both}
+.glove{position:absolute;left:50%;top:50%;width:46px;height:30px;border-radius:14px;background:var(--amber);opacity:.85;transform:translate(-50%,-50%)}
+.glove.anim{animation:dive .4s ease-out both}
+.glove.saved{background:var(--ok)}
+@keyframes shot{from{top:140%;transform:translate(-50%,-50%) scale(.5)}to{top:45%}}
+@keyframes dive{from{opacity:0;transform:translate(-50%,-50%) scale(.6)}to{opacity:.85}}
+.pgoal.is-goal{border-color:var(--ok)}
+.pgoal.is-save{border-color:var(--bad)}
+.presult{font-family:var(--f-display);font-weight:900;text-transform:uppercase;text-align:center;font-size:clamp(1.8rem,5vw,2.6rem);line-height:1}
+.presult.goal{color:var(--ok)} .presult.save{color:var(--bad)}
+.pstatus{display:flex;flex-direction:column;gap:2px;font-size:.88rem;color:var(--muted)}
+.pst.ok{color:var(--ok)}
+.pctrl{display:flex;flex-direction:column;gap:6px;border:1.5px solid var(--c);border-radius:8px;padding:10px}
+.pctrl .label{color:var(--c)}
+.pbtns{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.pbtns .bid{font-family:var(--f-body);font-size:.95rem}
+.shake-x{animation:shake .45s}
+@media (prefers-reduced-motion:reduce){.pball,.glove,.shake-x{animation:none}}
 .mini-light{font-family:var(--f-display);font-weight:900;text-transform:uppercase;text-align:center;font-size:clamp(2.6rem,8vw,4.5rem);border-radius:10px;padding:24px 10px;line-height:1}
 .mini-light.wait{background:var(--bad);color:#2a0606}
 .mini-light.go{background:var(--ok);color:#06210f}
@@ -449,7 +485,7 @@ const genCode = () => Array.from({length:4},()=>"ABCDEFGHJKMNPQRSTUVWXYZ23456789
 
 // Acciones: en local y en el anfitrión se ejecutan; un invitado se las manda al anfitrión
 const LOCAL = {
-  bid:(mi,inc)=>bid(mi,inc), skip:mi=>skip(mi), mini:(mi,r)=>miniPress(mi,r),
+  bid:(mi,inc)=>bid(mi,inc), skip:mi=>skip(mi), pen:(mi,dir)=>penPick(mi,dir),
   pause:()=>togglePause(),
   lspeed:()=>liveSpeed(), lskip:()=>{ if(S.live&&!S.live.ended) endLive(); }, lclose:()=>{ if(S.live&&S.live.ended) closeLive(); },
   next:()=>{ if(S.phase==="auction"&&S.lot&&S.lot.sold) nextLot(); },
@@ -457,7 +493,7 @@ const LOCAL = {
   play:()=>{ if(S.phase==="league") playNext(); }, all:()=>{ if(S.phase==="league") playAll(); },
   po:()=>{ if(S.playoff&&!S.playoff.res) playPlayoff(); }, replay:()=>{ if(S.phase==="final") replayLeague(); },
 };
-const SEATED = ["bid","skip","mini"];
+const SEATED = ["bid","skip","pen"];
 function A(name,...args){
   if(NET.role!=="client") return LOCAL[name](...args);
   if(NET.seat<0) return;
@@ -609,7 +645,7 @@ function renderSetup(){
         <li>La primera puja paga la salida (o salida +20 / +50 / +100). Después se sube de <b>+10, +20, +50 o +100 M</b>, con los botones o las teclas.</li>
         <li>En cuanto alguien puja empieza la cuenta: <b>${CD} s</b> desde la última puja, falten pistas o no. A la una, a las dos… ¡vendido!</li>
         <li>Cada mánager tiene <b>${SKIPS} skips</b> por partida (teclas ${SKIPKEYS.join(" ").toUpperCase()}). Si nadie puja, el que no haya pasado <b>se queda el jugador por el precio de salida</b>, también si ya no le quedan skips.</li>
-        <li>Si son varios los que no pujan ni pasan, se juegan un <b>minijuego de reflejos</b>: el más lento se lo queda por la salida.</li>
+        <li>Si son varios los que no pujan ni pasan, se juegan una <b>tanda de penaltis</b>: chuta uno, para el otro y se cambian. Quien pierda se lo queda por la salida.</li>
         <li>No puedes pujar por un puesto que ya tienes completo, y siempre te tiene que quedar <b>10 M por hueco libre</b>.</li>
         <li>La calidad real (media) solo se descubre al venderse. Si todos pasan, el jugador va a la <b>pila de descartes</b>.</li>
         <li>Quien se queda sin dinero (solo le queda lo justo para completar) recibe esos <b>descartes</b> a 10 M cada uno, en los puestos que le falten. Al acabar la subasta, los huecos vacíos se llenan primero con descartes y luego con canteranos.</li>
@@ -757,7 +793,7 @@ function resolveNoBid(){
   const L=S.lot, c=stuck();
   if(c.length===0){ L.sold={to:-1}; L.clues=4; (S.discards=S.discards||[]).push(L.pi); stop(); save(); return renderAuction(); }
   if(c.length===1) return assign(c[0],L.salida,"obligado");
-  stop(); L.mini={who:c, phase:"ready", pressed:[], loser:null, early:null};
+  stop(); L.mini=newMini(c);
   save(); renderAuction();
 }
 function togglePause(){ if(!S.lot||S.lot.sold) return; paused=!paused; save(); renderAuction(); }
@@ -786,52 +822,114 @@ function revealClue(){
 }
 function stop(){ if(timer){clearInterval(timer);timer=null;} }
 
-// ---------- Minijuego: reflejos ----------
-let miniTimer=null;
-function stopMini(){ if(miniTimer){clearTimeout(miniTimer);miniTimer=null;} }
+// ---------- Minijuego: tanda de penaltis ----------
+// Duelo entre dos: se turnan para chutar y parar, 3 tiros cada uno y muerte súbita.
+// El que pierde el duelo sigue en peligro contra el siguiente; el último perdedor se queda el jugador.
+// Las elecciones se guardan fuera del estado compartido para que nadie las vea antes de tiempo.
+const PEN_T = 10, DIRS = ["Izquierda","Centro","Derecha"], DT = ["a la izquierda","al centro","a la derecha"], DIRKEYS = ["arrowleft","arrowdown","arrowright"];
+let miniTimer=null, penPicks={};
+function stopMini(){ if(miniTimer){ clearInterval(miniTimer); clearTimeout(miniTimer); miniTimer=null; } }
+function newMini(who){
+  const q=shuffle(who);
+  return {who, a:q[0], b:q[1], queue:q.slice(2), safe:[], phase:"ready", g:{}, k:{}, hist:[], t:PEN_T, ready:{sh:false,gk:false}, last:null};
+}
+const shooter = M => (M.k[M.a]||0) <= (M.k[M.b]||0) ? M.a : M.b;
+const keeper  = M => shooter(M)===M.a ? M.b : M.a;
 function miniStart(){
   const M=S.lot.mini; if(!M||M.phase!=="ready") return;
-  M.phase="wait"; save(); renderAuction();
-  miniTimer=setTimeout(()=>{
-    M.phase="go"; save(); renderAuction();
-    // quien no pulse en 6 s pierde
-    miniTimer=setTimeout(()=>{ if(M.phase==="go") miniEnd(M.who.find(i=>!M.pressed.some(x=>x.i===i))); },6000);
-  }, 1500+Math.random()*3000);
+  startKick(M);
 }
-// Cada pantalla mide su propio tiempo de reacción desde que ve "¡YA!", así la conexión no cuenta
-let miniT0=0, miniKey="";
-function pressMini(mi){
-  const M=S&&S.lot&&S.lot.mini; if(!M||!mine(mi)) return;
-  if(M.phase==="wait") return A("mini",mi,{early:true});
-  if(M.phase==="go") A("mini",mi,{ms:Math.round(performance.now()-miniT0)});
-}
-function miniPress(mi,r={}){
-  const M=S.lot&&S.lot.mini; if(!M||!M.who.includes(mi)||M.pressed.some(x=>x.i===mi)) return;
-  if(M.phase!=="wait"&&M.phase!=="go") return;
-  if(r.early||M.phase==="wait"){ M.early=mi; return miniEnd(mi); }
-  M.pressed.push({i:mi,ms:Math.max(0,Math.min(60000,Math.round(+r.ms||0)))});
-  const rest=M.who.filter(i=>!M.pressed.some(x=>x.i===i));
-  if(NET.role==="local"&&rest.length===1) return miniEnd(rest[0]);
-  if(rest.length===0) return miniEnd(M.pressed.reduce((a,b)=>b.ms>a.ms?b:a).i);
+function startKick(M){
+  stopMini(); penPicks={};
+  M.phase="kick"; M.t=PEN_T; M.ready={sh:false,gk:false}; M.sh=shooter(M); M.gk=keeper(M);
   save(); renderAuction();
+  if(NET.role==="client") return;
+  miniTimer=setInterval(()=>{
+    if(M.phase!=="kick"){ stopMini(); return; }
+    M.t--;
+    if(M.t<=0){ // quien no elija, elige al azar
+      if(penPicks.sh==null) penPicks.sh=Math.floor(Math.random()*3);
+      if(penPicks.gk==null) penPicks.gk=Math.floor(Math.random()*3);
+      return resolveKick(M);
+    }
+    save(); renderAuction();
+  },1000);
+}
+function penPick(mi,dir){
+  const M=S.lot&&S.lot.mini; if(!M||M.phase!=="kick") return;
+  dir=+dir; if(!(dir>=0&&dir<=2)) return;
+  if(mi===M.sh&&penPicks.sh==null){ penPicks.sh=dir; M.ready.sh=true; }
+  else if(mi===M.gk&&penPicks.gk==null){ penPicks.gk=dir; M.ready.gk=true; }
+  else return;
+  if(penPicks.sh!=null&&penPicks.gk!=null) return resolveKick(M);
+  save(); renderAuction();
+}
+function resolveKick(M){
+  stopMini();
+  const sd=penPicks.sh, gd=penPicks.gk, goal=sd!==gd;
+  M.k[M.sh]=(M.k[M.sh]||0)+1; if(goal) M.g[M.sh]=(M.g[M.sh]||0)+1;
+  M.last={sh:M.sh,gk:M.gk,sd,gd,goal}; M.hist.push([M.sh,goal?1:0]);
+  M.phase="result"; save(); renderAuction();
+  if(NET.role==="client") return;
+  miniTimer=setTimeout(()=>{
+    const ga=M.g[M.a]||0, gb=M.g[M.b]||0, ka=M.k[M.a]||0, kb=M.k[M.b]||0;
+    let loser=null;
+    if(ka<=3&&kb<=3){ if(ga>gb+(3-kb)) loser=M.b; else if(gb>ga+(3-ka)) loser=M.a; }
+    if(loser==null&&ka===kb&&ka>=3&&ga!==gb) loser=ga<gb?M.a:M.b;
+    if(loser==null) return startKick(M);
+    const winner=loser===M.a?M.b:M.a;
+    M.safe.push(winner);
+    if(M.queue.length){ // el que pierde sigue en peligro contra el siguiente
+      M.a=loser; M.b=M.queue.shift(); M.g={}; M.k={}; M.hist=[]; M.last=null; M.duelMsg=winner;
+      M.phase="ready"; save(); renderAuction(); return;
+    }
+    miniEnd(loser);
+  },2200);
 }
 function miniEnd(loser){
   stopMini();
   const M=S.lot.mini; M.phase="done"; M.loser=loser;
   assign(loser,S.lot.salida,"minijuego");
 }
+function pressPen(mi,dir){ const M=S&&S.lot&&S.lot.mini; if(!M||!mine(mi)||M.phase!=="kick") return; A("pen",mi,dir); }
 function miniHTML(){
-  const M=S.lot.mini, n=i=>`<b style="color:${COLORS[i]}">${esc(S.names[i])}</b>`;
-  const w=M.who.map(n), who=w.slice(0,-1).join(", ")+" y "+w[w.length-1];
-  const btns=M.who.map(i=>`<button class="bid mini" data-mini="${i}" style="--c:${COLORS[i]}" ${M.phase==="ready"||M.phase==="done"||!mine(i)?"disabled":""}>${esc(S.names[i])}<kbd>${mine(i)?(NET.role==="local"?keysOf(i).join(" ").toUpperCase():"Espacio"):"remoto"}</kbd></button>`).join("");
-  let state="";
-  if(M.phase==="ready") state=`<p style="margin:0">Nadie ha pujado y ${who} no han pasado. Se juegan quién se queda con el jugador por <b>${S.lot.salida} M</b>.</p>
-    <p style="margin:0;color:var(--muted)"><b>Reflejos:</b> cuando salga <b>¡YA!</b>, pulsa ${NET.role==="local"?"cualquiera de tus teclas o tu botón":"la <b>barra espaciadora</b>"}. El último en pulsar, o el que se adelante, se lo queda.</p>
-    <button class="btn amber" id="minigo">Empezar minijuego</button>`;
-  else if(M.phase==="wait") state=`<div class="mini-light wait">Espera…</div>`;
-  else if(M.phase==="go") state=`<div class="mini-light go" id="minilight">¡YA!</div>`;
-  else state=M.early!=null?`<p style="margin:0">${n(M.early)} se ha adelantado.</p>`:`<p style="margin:0">${M.pressed.map(x=>`${n(x.i)} ${x.ms} ms`).join(" · ")}</p>`;
-  return `<div class="minibox"><span class="label">Minijuego de desempate</span>${state}<div class="bids" style="grid-template-columns:repeat(${M.who.length},1fr)">${btns}</div></div>`;
+  const M=S.lot.mini, nb=i=>`<b style="color:${COLORS[i]}">${esc(S.names[i])}</b>`;
+  const sh=M.phase==="ready"?shooter(M):M.sh, gk=M.phase==="ready"?keeper(M):M.gk;
+  const dots=i=>{ const h=M.hist.filter(x=>x[0]===i).map(x=>`<span class="pdot ${x[1]?"in":"out"}"></span>`); while(h.length<3) h.push(`<span class="pdot"></span>`); return h.join(""); };
+  const score=`<div class="pscore">
+      <div class="pside">${nb(M.a)}<span class="pdots">${dots(M.a)}</span></div>
+      <span class="mono pnum">${M.g[M.a]||0} – ${M.g[M.b]||0}</span>
+      <div class="pside r">${nb(M.b)}<span class="pdots">${dots(M.b)}</span></div></div>`;
+  const roles=`<div class="duel">
+      <div class="role" style="--c:${COLORS[sh]}"><span class="label">Chuta</span><b>${esc(S.names[sh])}</b>${NET.role!=="local"&&mine(sh)?`<span class="you">tú</span>`:""}</div>
+      <span class="vsx">vs</span>
+      <div class="role" style="--c:${COLORS[gk]}"><span class="label">Portero</span><b>${esc(S.names[gk])}</b>${NET.role!=="local"&&mine(gk)?`<span class="you">tú</span>`:""}</div></div>`;
+  const zones=(M.phase==="result"&&M.last)?[0,1,2].map(z=>`<div class="zone">${z===M.last.gd?`<span class="glove ${M.last.goal?"":"saved"}" id="glove"></span>`:""}${z===M.last.sd?`<span class="pball ${M.last.goal?"goal":""}" id="pball"></span>`:""}</div>`).join(""):[0,1,2].map(()=>`<div class="zone"></div>`).join("");
+  const goalBox=`<div class="pgoal ${M.phase==="result"?(M.last.goal?"is-goal":"is-save"):""}" id="pgoal">${zones}</div>`;
+  let body="";
+  if(M.phase==="ready"){
+    const others=M.queue.length?`<p class="note" style="margin:0">Esperan turno: ${M.queue.map(nb).join(", ")}. ${M.safe.length?`A salvo: ${M.safe.map(nb).join(", ")}.`:""}</p>`:(M.safe.length?`<p class="note" style="margin:0">A salvo: ${M.safe.map(nb).join(", ")}.</p>`:"");
+    body=`${M.duelMsg!=null?`<p style="margin:0">${nb(M.duelMsg)} gana su duelo y se salva. ${nb(M.a)} sigue en peligro.</p>`:`<p style="margin:0">Nadie ha pujado y ${M.who.map(nb).join(", ").replace(/, ([^,]*)$/," y $1")} no han pasado. Se juega a penaltis quién se queda el jugador por <b>${S.lot.salida} M</b>.</p>`}
+      <p class="note" style="margin:0">3 tiros cada uno y, si hay empate, muerte súbita. Quien chuta y quien para eligen a la vez y en secreto: izquierda, centro o derecha. Si coinciden, ¡parada! Quien pierda la tanda se lo queda.</p>
+      ${others}<button class="btn amber" id="minigo">Empezar la tanda: ${esc(S.names[M.a])} vs ${esc(S.names[M.b])}</button>`;
+  } else if(M.phase==="kick"){
+    const st=(ok,i,verb)=>`<span class="pst ${ok?"ok":""}">${esc(S.names[i])} ${ok?"ya ha elegido":verb}</span>`;
+    const ctrl=(i,role)=>{
+      if(!mine(i)||M.ready[role]) return "";
+      const keys=NET.role==="local"?keysOf(i).slice(0,3).map(k=>k.toUpperCase()):["←","↓","→"];
+      return `<div class="pctrl" style="--c:${COLORS[i]}"><span class="label">${NET.role==="local"?esc(S.names[i])+": ":""}${role==="sh"?"¿Dónde chutas?":"¿Hacia dónde te tiras?"}</span>
+        <div class="pbtns">${DIRS.map((d,z)=>`<button class="bid" data-pen="${i}" data-dir="${z}">${d}<kbd>${keys[z]}</kbd></button>`).join("")}</div></div>`;
+    };
+    body=`<div class="cdbar ${M.t<=3?"hot":""}"><i style="width:${M.t/PEN_T*100}%"></i></div>
+      <div class="pstatus">${st(M.ready.sh,M.sh,"pensando dónde chutar…")}${st(M.ready.gk,M.gk,"pensando hacia dónde tirarse…")}</div>
+      ${ctrl(M.sh,"sh")}${ctrl(M.gk,"gk")}
+      ${NET.role!=="local"&&!mine(M.sh)&&!mine(M.gk)?`<p class="note" style="margin:0">Estás mirando este penalti.</p>`:""}`;
+  } else if(M.phase==="result"){
+    const L=M.last;
+    body=`<div class="presult ${L.goal?"goal":"save"}">${L.goal?`¡GOL de ${esc(S.names[L.sh])}!`:`¡PARADA de ${esc(S.names[L.gk])}!`}</div>
+      <p class="note" style="margin:0;text-align:center">Chutó ${DT[L.sd]} · el portero se tiró ${DT[L.gd]}</p>`;
+  }
+  return `<div class="minibox"><span class="label">Minijuego · tanda de penaltis</span>${roles}${score}${goalBox}${body}</div>`;
 }
 
 // ---------- Pantalla de subasta ----------
@@ -890,7 +988,6 @@ function renderAuction(fresh=false, newClue=false){
   const peekHTML=L.peek&&!L.sold?`<div class="peek"><span class="rating">${p.r}</span> media filtrada por el ojeador</div>`:"";
   const extras=[L.fast&&"Lote relámpago: 4 s entre pujas", L.tax&&"Comisión: +25 M para quien gane la puja", L.blind&&"Sin más pistas"].filter(Boolean);
   const showMini=L.mini&&!L.sold;
-  if(showMini&&L.mini.phase==="go"&&miniKey!==S.di+"-"+S.sales){ miniKey=S.di+"-"+S.sales; miniT0=performance.now(); }
   app.innerHTML=`
   ${teamsHTML(L.leader)}
   <section class="stage">
@@ -929,7 +1026,7 @@ function renderAuction(fresh=false, newClue=false){
   // pointerdown: la pantalla se repinta a menudo y un click normal podría perderse
   app.querySelectorAll(".bid[data-inc]").forEach(b=>b.addEventListener("pointerdown",e=>{e.preventDefault();A("bid",+b.dataset.m,+b.dataset.inc)}));
   app.querySelectorAll("[data-skip]").forEach(b=>b.addEventListener("pointerdown",e=>{e.preventDefault();A("skip",+b.dataset.skip)}));
-  app.querySelectorAll("[data-mini]").forEach(b=>b.addEventListener("pointerdown",e=>{e.preventDefault();pressMini(+b.dataset.mini)}));
+  app.querySelectorAll("[data-pen]").forEach(b=>b.addEventListener("pointerdown",e=>{e.preventDefault();pressPen(+b.dataset.pen,+b.dataset.dir)}));
   const $=id=>document.getElementById(id);
   if($("next")){ $("next").onclick=()=>A("next"); $("next").focus(); }
   if($("minigo")){ $("minigo").onclick=()=>A("minigo"); $("minigo").focus(); }
@@ -939,15 +1036,19 @@ function renderAuction(fresh=false, newClue=false){
 document.addEventListener("keydown",e=>{
   if(!S||S.phase!=="auction"||e.target.tagName==="INPUT"||e.repeat) return;
   const L=S.lot, k=e.key.toLowerCase();
+  if(L&&L.mini&&!L.sold&&e.key===" "){ e.preventDefault(); }
   if(L&&L.sold&&e.key==="Enter"){ e.preventDefault(); return A("next"); }
   // qué mánager controla esta tecla: en local, por su fila; en online, siempre el tuyo
   const owner = i => NET.role==="local" ? (i<S.m.length?i:-1) : NET.seat;
   const row = NET.role==="local" ? KEYS : [KEYS[0]], sk = NET.role==="local" ? SKIPKEYS : [SKIPKEYS[0]];
   if(L&&L.mini&&!L.sold){
-    // online: solo la barra espaciadora. En un mismo ordenador cada uno necesita su tecla
-    if(NET.role!=="local"){ if(k===" "&&NET.seat>=0){ e.preventDefault(); pressMini(NET.seat); } return; }
-    const r=row.findIndex((ks,i)=>ks.includes(k)||sk[i]===k);
-    if(r>=0&&owner(r)>=0){ e.preventDefault(); pressMini(owner(r)); }
+    // penaltis: online con las flechas (o Q W E); en un mismo ordenador, las 3 primeras teclas de cada uno
+    if(NET.role!=="local"){
+      let d=DIRKEYS.indexOf(k); if(d<0) d=KEYS[0].slice(0,3).indexOf(k);
+      if(d>=0&&NET.seat>=0){ e.preventDefault(); pressPen(NET.seat,d); }
+      return;
+    }
+    row.forEach((ks,r)=>{ const d=ks.slice(0,3).indexOf(k); if(d>=0&&owner(r)>=0){ e.preventDefault(); pressPen(owner(r),d); } });
     return;
   }
   row.forEach((ks,r)=>{const j=ks.indexOf(k); if(j>=0&&owner(r)>=0) A("bid",owner(r),INCS[j]);});
@@ -1335,6 +1436,7 @@ const SFX = {
   goal(at=0){ noise(.6,.15,1200,at); tone(784,.12,"square",.04,at); tone(1047,.2,"square",.04,at+.1); },
   champ(){ [523,659,784,1047,784,1047].forEach((f,i)=>tone(f,.22,"triangle",.08,i*.16)); noise(1.2,.12,1400,.4); },
   err(){ tone(180,.12,"square",.05); },
+  save(){ tone(140,.2,"sine",.22); noise(.12,.18,500); tone(520,.25,"triangle",.05,.08,260); },
 };
 function toggleMute(){
   muted=!muted; try{ localStorage.setItem("subasta-mute",muted?"1":"0"); }catch(e){}
@@ -1360,8 +1462,9 @@ function react(){
     if(L.clues>seen.clues&&!L.sold) SFX.clue();
     if(skips>seen.skips) SFX.skip();
     if(L.sold&&!seen.sold){ if(L.sold.to>=0){ SFX.sold(); flashEl("stamp","stamp-in"); flashEl("team"+L.sold.to,"pulse"); } else SFX.desert(); }
-    const mp=M&&M.phase;
-    if(mp!==seen.mini){ if(mp==="wait") SFX.wait(); if(mp==="go"){ SFX.go(); flashEl("minilight","flash-go"); } }
+    const mp=M&&M.phase, mh=M?M.hist.length:0;
+    if(mp!==seen.mini&&mp==="kick") SFX.wait();
+    if(M&&mp==="result"&&seen.mini!=="result"&&M.last){ flashEl("pball","anim"); flashEl("glove","anim"); if(M.last.goal){ SFX.goal(); flashEl("pgoal","goalflash"); } else { SFX.save(); flashEl("pgoal","shake-x"); } }
     if(!L.sold&&L.leader>=0&&L.cd!==seen.cd&&L.cd<=3&&L.cd>0) SFX.tick(L.cd<=2);
     seen={phase:"auction",di:S.di,bid:L.bid,clues:L.clues,sold:!!L.sold,skips,mini:mp,cd:L.cd};
   } else if(S.phase==="league"||S.phase==="final"){
@@ -1409,7 +1512,7 @@ function route(){
   netbar();
   if(S.phase==="lobby") return renderLobby();
   if(S.phase==="auction"){
-    const M=S.lot.mini; if(M&&!S.lot.sold){ M.phase="ready"; M.pressed=[]; M.early=null; }
+    const M=S.lot.mini; if(M&&!S.lot.sold&&M.phase!=="ready"){ M.phase="ready"; }
     renderAuction(true); if(!S.lot.sold) run();
   }
   else { renderLeague(); runLive(); }
