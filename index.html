@@ -110,6 +110,8 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 .bid:active:not(:disabled){transform:translateY(1px)}
 .flash{min-height:1.3em;color:var(--bad);font-weight:600}
 .netbar{display:flex;gap:12px;align-items:center;flex-wrap:wrap;justify-content:space-between;background:var(--panel-2);border:1px solid var(--amber);border-radius:8px;padding:8px 12px;font-size:.9rem}
+.namestep{display:flex;flex-direction:column;gap:8px;border-top:1px solid var(--line);padding-top:14px}
+.namestep input{flex:1 1 200px;min-width:0;background:var(--pitch);border:1.5px solid var(--line);border-left:5px solid var(--amber);border-radius:6px;color:var(--chalk);padding:11px 12px;font:inherit;font-size:1.05rem}
 .online-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:12px}
 .slot.skips{border-color:var(--amber);color:var(--amber)}
 .skipbtn{border:1.5px dashed var(--line);background:transparent;color:var(--chalk);border-radius:6px;padding:8px;font-weight:600;font-size:.85rem;display:flex;justify-content:center;gap:8px;align-items:center;touch-action:manipulation}
@@ -382,7 +384,6 @@ const LOCAL = {
   bid:(mi,inc)=>bid(mi,inc), skip:mi=>skip(mi), mini:(mi,r)=>miniPress(mi,r),
   clue:()=>revealClue(), pause:()=>togglePause(),
   next:()=>{ if(S.phase==="auction"&&S.lot&&S.lot.sold) nextLot(); },
-  hammer:()=>{ if(S.phase==="auction"&&S.lot&&!S.lot.sold&&S.lot.leader>=0) sell(); },
   minigo:()=>{ if(S.lot&&S.lot.mini) miniStart(); },
   play:()=>{ if(S.phase==="league") playNext(); }, all:()=>{ if(S.phase==="league") playAll(); },
   po:()=>{ if(S.playoff&&!S.playoff.res) playPlayoff(); }, replay:()=>{ if(S.phase==="final") replayLeague(); },
@@ -505,11 +506,16 @@ function renderSetup(){
   <section class="box">
     <span class="label">Jugar online · cada uno desde su casa</span>
     ${ROOM?`<div class="online-grid">
-      <div class="field"><label class="label" for="on-name">Tu nombre</label><input id="on-name" maxlength="16" style="--c:var(--amber)" value="${esc(names[0])}"></div>
       <div class="field"><label class="label">Crear sala</label><button class="btn amber" id="host">Crear partida</button></div>
       <div class="field"><label class="label" for="on-code">Código de sala</label><input id="on-code" maxlength="4" style="--c:var(--amber);text-transform:uppercase" placeholder="ABCD"></div>
       <div class="field"><label class="label">Entrar</label><button class="btn ghost" id="join">Unirse</button></div>
-    </div><p class="flash" id="onmsg"></p>`
+    </div>
+    <form class="namestep" id="namestep" hidden>
+      <label class="label" for="on-name" id="namelabel">¿Cómo te llamas?</label>
+      <div class="row"><input id="on-name" maxlength="16" style="--c:var(--amber)" autocomplete="nickname" placeholder="Tu nombre">
+        <button class="btn amber" type="submit" id="namego">Continuar</button><button class="btn ghost" type="button" id="namecancel">Cancelar</button></div>
+    </form>
+    <p class="flash" id="onmsg"></p>`
     :`<p class="note">${roomChecked?"No se ha podido cargar el modo online. Comprueba tu conexión a internet y recarga la página.":"Comprobando si se puede jugar online…"}</p>`}
   </section>
   <p class="label">O todos en este ordenador</p>
@@ -549,8 +555,28 @@ function renderSetup(){
   app.querySelectorAll("#np button").forEach(b=>b.onclick=()=>{ readNames(); const n=+b.dataset.n; names=Array.from({length:n},(_,i)=>names[i]||DEFAULT_NAMES[i]); renderSetup(); });
   document.getElementById("start").onclick=()=>{readNames();startAuction()};
   const r=document.getElementById("resume"); if(r) r.onclick=()=>{ if(saved.code&&ROOM) return hostGame(saved.seats[0].name,saved); S=saved; route(); };
-  const h=document.getElementById("host"); if(h) h.onclick=()=>hostGame(document.getElementById("on-name").value);
-  const j=document.getElementById("join"); if(j) j.onclick=()=>joinGame(document.getElementById("on-code").value,document.getElementById("on-name").value);
+  // El nombre se pide justo al crear o unirse
+  const step=document.getElementById("namestep");
+  const askName=(label,go)=>{
+    setupMsg("");
+    document.getElementById("namelabel").textContent=label;
+    document.getElementById("namego").textContent=go.text;
+    const inp=document.getElementById("on-name");
+    try{ inp.value=localStorage.getItem("subasta-name")||""; }catch(e){}
+    step.hidden=false; inp.focus(); inp.select();
+    step.onsubmit=e=>{ e.preventDefault(); const nm=inp.value.trim(); if(!nm){ setupMsg("Escribe tu nombre para continuar."); return inp.focus(); }
+      try{ localStorage.setItem("subasta-name",nm); }catch(_){} step.hidden=true; go.run(nm); };
+  };
+  const h=document.getElementById("host");
+  if(h) h.onclick=()=>askName("¿Cómo te llamas? Serás el anfitrión de la sala.",{text:"Crear sala",run:nm=>hostGame(nm)});
+  const j=document.getElementById("join");
+  if(j) j.onclick=()=>{
+    const code=document.getElementById("on-code").value.toUpperCase().replace(/[^A-Z0-9]/g,"");
+    if(code.length!==4){ step.hidden=true; return setupMsg("Escribe primero el código de 4 letras o números que te han pasado."); }
+    askName(`¿Cómo te llamas? Vas a entrar en la sala ${code}.`,{text:"Entrar",run:nm=>joinGame(code,nm)});
+  };
+  const nc=document.getElementById("namecancel"); if(nc) nc.onclick=()=>{ step.hidden=true; setupMsg(""); };
+  const oc=document.getElementById("on-code"); if(oc) oc.onkeydown=e=>{ if(e.key==="Enter"){ e.preventDefault(); j.click(); } };
 }
 function readNames(){ names=names.map((_,i)=>{ const el=document.getElementById("m"+i); return (el&&el.value.trim())||"Mánager "+(i+1); }); }
 
@@ -776,8 +802,7 @@ function renderAuction(fresh=false, newClue=false){
         ${L.sold
           ? `<button class="btn amber" id="next">Siguiente lote</button>`
           : `<button class="btn amber sm" id="clue" ${L.clues>=4||paused?"disabled":""}>Siguiente pista · Espacio</button>
-             <button class="btn ghost sm" id="pause">${paused?"Reanudar":"Pausa"}</button>
-             <button class="btn ghost sm" id="hammer" ${L.leader<0?"disabled":""}>Adjudicar ya</button>`}
+             <button class="btn ghost sm" id="pause">${paused?"Reanudar":"Pausa"}</button>`}
       </div>
       <div class="flash">${esc(L.msg)}</div>`}
     </aside>
@@ -798,7 +823,6 @@ function renderAuction(fresh=false, newClue=false){
   if($("minigo")){ $("minigo").onclick=()=>A("minigo"); $("minigo").focus(); }
   if($("pause")) $("pause").onclick=()=>A("pause");
   if($("clue")) $("clue").onclick=()=>A("clue");
-  if($("hammer")) $("hammer").onclick=()=>A("hammer");
 }
 document.addEventListener("keydown",e=>{
   if(!S||S.phase!=="auction"||e.target.tagName==="INPUT"||e.repeat) return;
