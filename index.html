@@ -1,0 +1,974 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Subasta Futbolera</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800;900&family=Barlow:wght@400;500;600;700&family=Chivo+Mono:wght@500;700&display=swap">
+<style>
+[hidden]{display:none!important}
+img{max-width:100%}
+/* Layout: estadio de noche. Arriba las tres plantillas (presupuesto y huecos), en el centro el lote misterioso con sus pistas, abajo las tres paletas de puja. */
+:root{
+  --pitch:#0c2a21; --pitch-2:#113629; --panel:#173f31; --panel-2:#0a1f18; --chalk:#eef4ec; --muted:#a9c2b4;
+  --line:rgba(238,244,236,.16); --amber:#ffb627; --ok:#45c985; --bad:#ff5d5d;
+  --m1:#5cb3ff; --m2:#ff7096; --m3:#b996ff;
+  --f-display:"Big Shoulders Display","Arial Narrow",Impact,sans-serif;
+  --f-body:"Barlow","Segoe UI",system-ui,sans-serif;
+  --f-mono:"Chivo Mono",ui-monospace,Consolas,monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:var(--f-body);font-size:16px;color:var(--chalk);background:var(--pitch);
+  background-image:repeating-linear-gradient(90deg,var(--pitch) 0 80px,var(--pitch-2) 80px 160px)}
+.wrap{max-width:1180px;margin:0 auto;padding-block:20px 48px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  display:flex;flex-direction:column;gap:18px}
+h1,h2,h3{font-family:var(--f-display);text-transform:uppercase;letter-spacing:.02em;margin:0;text-wrap:balance;line-height:.95}
+button{font:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
+.btn{border:0;border-radius:6px;padding:12px 20px;font-weight:700;font-size:1rem;background:var(--chalk);color:var(--pitch);text-transform:uppercase;letter-spacing:.05em}
+.btn:hover{filter:brightness(.92)}
+.btn.ghost{background:transparent;color:var(--chalk);border:1.5px solid var(--line)}
+.btn.ghost:hover{border-color:var(--chalk)}
+.btn.amber{background:var(--amber);color:#2a1a00}
+.btn.sm{padding:8px 12px;font-size:.85rem}
+.btn:disabled{opacity:.35;cursor:not-allowed}
+.label{font-size:.75rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.box{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:18px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.note{color:var(--muted);font-size:.85rem}
+
+/* Portada */
+.hero{display:flex;flex-direction:column;gap:10px;padding-top:12px}
+.hero h1{font-size:clamp(3rem,10vw,6.5rem);font-weight:900}
+.hero h1 span{color:var(--amber)}
+.hero p{margin:0;color:var(--muted);max-width:62ch;line-height:1.5}
+.setup{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:18px}
+.field{display:flex;flex-direction:column;gap:6px}
+.field input{background:var(--pitch);border:1.5px solid var(--line);border-left:5px solid var(--c);border-radius:6px;color:var(--chalk);padding:11px 12px;font:inherit;font-size:1.05rem}
+.seg{display:flex;gap:8px;flex-wrap:wrap}
+.seg button{border:1.5px solid var(--line);background:var(--pitch);color:var(--chalk);border-radius:6px;padding:8px 14px;font-weight:700}
+.seg button[aria-pressed="true"]{border-color:var(--amber);color:var(--amber)}
+.rules{margin:0;padding-left:18px;color:var(--muted);line-height:1.6;font-size:.95rem}
+.rules b{color:var(--chalk)}
+.formation{font-family:var(--f-mono);font-size:.85rem;color:var(--chalk)}
+
+/* Plantillas */
+.teams{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.team{background:var(--panel-2);border:1px solid var(--line);border-top:4px solid var(--c);border-radius:8px;padding:12px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.team.lead{box-shadow:0 0 0 2px var(--c)}
+.team .top{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.team .nm{font-family:var(--f-display);font-weight:800;font-size:1.35rem;text-transform:uppercase;color:var(--c);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.team .money{font-family:var(--f-mono);font-weight:700;font-size:1.2rem;color:var(--amber);white-space:nowrap}
+.slots{display:flex;gap:6px;flex-wrap:wrap}
+.slot{font-family:var(--f-mono);font-size:.75rem;padding:2px 6px;border-radius:4px;border:1px solid var(--line);color:var(--muted)}
+.slot.full{background:var(--chalk);color:var(--pitch);border-color:var(--chalk)}
+.roster{display:flex;flex-direction:column;gap:2px;font-size:.85rem;max-height:9.5em;overflow:auto}
+.roster div{display:grid;grid-template-columns:2.6em 1fr auto;gap:6px;align-items:baseline}
+.roster .ps{font-family:var(--f-mono);font-size:.7rem;color:var(--muted)}
+.roster .pr{font-family:var(--f-mono);font-size:.75rem;color:var(--muted)}
+
+/* Lote */
+.stage{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:16px}
+.lot{background:var(--chalk);color:#0f2219;border-radius:10px;padding:20px 22px;display:flex;flex-direction:column;gap:14px;min-width:0;position:relative}
+.lot .hd{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.pos{font-family:var(--f-display);font-weight:900;font-size:1.1rem;letter-spacing:.06em;text-transform:uppercase;background:#0f2219;color:var(--chalk);padding:4px 10px;border-radius:4px}
+.lot .count{font-family:var(--f-mono);font-size:.8rem;color:#3c5a4b}
+.lot h2{font-size:clamp(2rem,5vw,3rem);font-weight:900}
+.clues{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px;counter-reset:k}
+.clues li{counter-increment:k;display:grid;grid-template-columns:2.2em 1fr;gap:10px;font-size:1.08rem;line-height:1.4;font-weight:500}
+.clues li::before{content:"0" counter(k);font-family:var(--f-mono);font-weight:700;color:#3c5a4b;padding-top:.15em}
+.clues li.hidden{color:#7d958a;font-style:italic}
+.clues li.new{animation:in .45s both}
+@keyframes in{from{opacity:.0;transform:translateX(-8px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.clues li.new{animation:none}}
+.reveal{border-top:2px dashed #b8c8bf;padding-top:14px;display:flex;flex-direction:column;gap:6px}
+.reveal .who{font-family:var(--f-display);font-weight:900;font-size:clamp(2.2rem,6vw,3.6rem);text-transform:uppercase;line-height:.95}
+.rating{display:inline-flex;align-items:center;justify-content:center;font-family:var(--f-mono);font-weight:700;background:#0f2219;color:var(--amber);border-radius:6px;padding:4px 10px;font-size:1.3rem}
+
+.auction{background:var(--panel-2);border:1px solid var(--line);border-radius:10px;padding:18px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.price{font-family:var(--f-mono);font-weight:700;font-size:clamp(2.6rem,7vw,4rem);color:var(--amber);line-height:1;font-variant-numeric:tabular-nums}
+.leader{font-family:var(--f-display);font-weight:800;font-size:1.5rem;text-transform:uppercase;min-height:1.2em}
+.call{font-family:var(--f-display);font-weight:800;font-size:1.3rem;text-transform:uppercase;letter-spacing:.04em;min-height:1.3em}
+.call.hot{color:var(--bad)}
+.cdbar{height:8px;background:var(--line);border-radius:4px;overflow:hidden}
+.cdbar i{display:block;height:100%;background:var(--amber);transition:width 1s linear}
+@media (prefers-reduced-motion:reduce){.cdbar i{transition:none}}
+
+.paddles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.paddle{border:1.5px solid var(--line);border-radius:8px;padding:12px;display:flex;flex-direction:column;gap:8px;background:var(--panel);min-width:0}
+.paddle .pn{font-family:var(--f-display);font-weight:800;font-size:1.2rem;text-transform:uppercase;color:var(--c);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.paddle .why{font-size:.8rem;color:var(--muted);min-height:1.2em}
+.bids{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.bid{border:0;border-radius:6px;padding:10px 4px;background:var(--c);color:#0b1612;font-weight:800;font-family:var(--f-mono);display:flex;flex-direction:column;align-items:center;gap:2px;touch-action:manipulation}
+.bid kbd{font-family:var(--f-mono);font-size:.68rem;font-weight:700;opacity:.7;border:1px solid rgba(0,0,0,.35);border-radius:3px;padding:0 4px}
+.bid:disabled{opacity:.25;cursor:not-allowed}
+.bid:active:not(:disabled){transform:translateY(1px)}
+.flash{min-height:1.3em;color:var(--bad);font-weight:600}
+.netbar{display:flex;gap:12px;align-items:center;flex-wrap:wrap;justify-content:space-between;background:var(--panel-2);border:1px solid var(--amber);border-radius:8px;padding:8px 12px;font-size:.9rem}
+.online-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:12px}
+.slot.skips{border-color:var(--amber);color:var(--amber)}
+.skipbtn{border:1.5px dashed var(--line);background:transparent;color:var(--chalk);border-radius:6px;padding:8px;font-weight:600;font-size:.85rem;display:flex;justify-content:center;gap:8px;align-items:center;touch-action:manipulation}
+.skipbtn:hover:not(:disabled){border-color:var(--chalk)}
+.skipbtn:disabled{opacity:.3;cursor:not-allowed}
+.skipbtn kbd{font-family:var(--f-mono);font-size:.68rem;border:1px solid var(--line);border-radius:3px;padding:0 4px}
+.minibox{display:flex;flex-direction:column;gap:12px;line-height:1.45}
+.mini-light{font-family:var(--f-display);font-weight:900;text-transform:uppercase;text-align:center;font-size:clamp(2.6rem,8vw,4.5rem);border-radius:10px;padding:24px 10px;line-height:1}
+.mini-light.wait{background:var(--bad);color:#2a0606}
+.mini-light.go{background:var(--ok);color:#06210f}
+.bid.mini{font-family:var(--f-display);font-size:1.15rem;text-transform:uppercase;padding:16px 6px}
+
+/* Liga */
+.league{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:16px}
+table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+th,td{padding:9px 8px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+th{font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:600}
+td:nth-child(2),th:nth-child(2){text-align:left}
+td.tm{font-family:var(--f-display);font-weight:800;font-size:1.2rem;text-transform:uppercase}
+td.pts{font-family:var(--f-mono);font-weight:700;color:var(--amber);font-size:1.1rem}
+.tablewrap{overflow-x:auto}
+.match{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
+.match .h{text-align:right}
+.match .tn{font-family:var(--f-display);font-weight:800;font-size:1.15rem;text-transform:uppercase}
+.match .sc{font-family:var(--f-mono);font-weight:700;font-size:1.4rem;background:var(--panel-2);border-radius:6px;padding:4px 12px;min-width:4.5em;text-align:center}
+.match .gl{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:.82rem;color:var(--muted)}
+.match .gl div:first-child{text-align:right}
+.jor{font-family:var(--f-mono);font-size:.8rem;color:var(--muted);padding-top:10px}
+.champ{text-align:center;padding:24px;border-radius:10px;background:var(--panel-2);border:2px solid var(--c);display:flex;flex-direction:column;gap:8px;align-items:center}
+.champ h1{font-size:clamp(2.6rem,9vw,5.5rem);font-weight:900;color:var(--c)}
+.xi{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.xi .team .roster{max-height:none}
+.strength{display:flex;gap:10px;font-family:var(--f-mono);font-size:.8rem;color:var(--muted);flex-wrap:wrap}
+.strength b{color:var(--chalk)}
+
+@media (max-width:820px){
+  .stage,.league{grid-template-columns:1fr}
+  .teams,.paddles,.xi{grid-template-columns:1fr}
+  .roster{max-height:none}
+}
+</style>
+</head>
+<body>
+
+<div class="wrap" style="padding-block:12px 0"><div class="netbar" id="netbar" hidden></div></div>
+<div class="wrap" id="app"></div>
+
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script>
+// ---------- Plantilla y reglas ----------
+const SLOTS = {POR:1, DEF:4, MED:3, DEL:3, DT:1};
+const POS_NAME = {POR:"Portero", DEF:"Defensa", MED:"Centrocampista", DEL:"Delantero", DT:"Entrenador"};
+const SQUAD = 12, BUDGET = 200, CD = 8, CLUE_EVERY = 5, IDLE_LIMIT = 12;
+const COLORS = ["var(--m1)","var(--m2)","var(--m3)"];
+const KEYS = [["q","w","e"],["v","b","n"],["i","o","p"]];
+const INCS = [1,5,10];
+
+// ---------- Jugadores: r = media oculta, p = pistas de más difícil a más fácil ----------
+const POOL = [
+ // PORTEROS
+ {n:"Gianluigi Buffon",pos:"POR",r:93,p:["En las categorías inferiores empezó jugando de centrocampista.","Bajó de categoría con su club por un escándalo y decidió quedarse.","Fue el portero más caro de la historia durante 17 años.","Se retiró con 45 años en el club donde debutó."]},
+ {n:"Iker Casillas",pos:"POR",r:91,p:["Lo sacaron de clase en el instituto para viajar con el primer equipo.","Ganó una final europea entrando desde el banquillo por lesión del titular.","Terminó su carrera en el país vecino tras un problema de corazón.","Levantó como capitán un Mundial y dos Eurocopas."]},
+ {n:"Manuel Neuer",pos:"POR",r:90,p:["Su fichaje provocó pancartas de protesta de su nueva afición por venir de un rival.","Quedó tercero en un Balón de Oro, algo rarísimo en su puesto.","Le operaron de un cáncer de piel en la cara.","Se le asocia con el término 'portero líbero'."]},
+ {n:"Oliver Kahn",pos:"POR",r:88,p:["Paró tres penaltis en una tanda de una final de Champions.","Fue elegido mejor jugador de un Mundial cuya final perdió.","Un rechace suyo provocó el primer gol de esa final.","Su apodo era 'El Titán'."]},
+ {n:"Petr Čech",pos:"POR",r:87,p:["Jugó más de una década con un casco protector tras una fractura de cráneo.","Ganó una Champions en el estadio del equipo rival.","Tras retirarse jugó al hockey sobre hielo, también de portero.","Es el portero con más porterías a cero de la historia de la Premier."]},
+ {n:"Emiliano Martínez",pos:"POR",r:86,p:["Pasó casi diez años en un club grande encadenando cesiones.","Debutó con su selección pasados los 28 años.","Una parada suya en el minuto 123 cambió la historia de su país.","Celebró de forma polémica el premio al mejor portero de un Mundial."]},
+ {n:"Kepa Arrizabalaga",pos:"POR",r:76,p:["Se formó en el Athletic y estuvo cedido en la Ponferradina y el Valladolid.","Es el portero más caro de la historia.","Se negó a ser sustituido en una final de copa en Wembley.","Fue cedido al Real Madrid tras la lesión de Courtois."]},
+ {n:"André Onana",pos:"POR",r:75,p:["Fue sancionado nueve meses por tomar sin querer un medicamento de su mujer.","Abandonó un Mundial a mitad de torneo tras discutir con su seleccionador.","Llegó a una final de Champions con un club italiano.","Un gigante inglés pagó por él cerca de 50 millones."]},
+ {n:"Loris Karius",pos:"POR",r:64,p:["Se formó en la cantera del Manchester City.","Cometió dos errores clamorosos en una final de Champions en Kiev.","Después se supo que había jugado esa final con una conmoción.","Años más tarde jugó una final de Copa de la Liga con el Newcastle."]},
+ {n:"Keylor Navas",pos:"POR",r:85,p:["Llegó a Europa por un club de Segunda División española.","Su traspaso se cayó porque un fax llegó tarde.","Ganó tres Champions seguidas como titular.","Para muchos es el mejor futbolista de la historia de su país centroamericano."]},
+ // DEFENSAS
+ {n:"Paolo Maldini",pos:"DEF",r:93,p:["Jugó cuatro Mundiales y no ganó ninguno.","Marcó el gol más rápido de una final de Champions durante años y aun así la perdió.","Su padre fue capitán del mismo club.","Su hijo también debutó con esa camiseta."]},
+ {n:"Franz Beckenbauer",pos:"DEF",r:95,p:["Jugó una semifinal de Mundial con el hombro dislocado y el brazo vendado al cuerpo.","Terminó su carrera en Estados Unidos junto a una leyenda brasileña.","Ganó el Mundial como jugador y como seleccionador.","Su apodo era un título imperial."]},
+ {n:"Cafu",pos:"DEF",r:89,p:["Fue rechazado en varias pruebas de cantera antes de triunfar.","Ganó una Champions con 36 años en Italia.","Es el único jugador que ha disputado tres finales de Mundial seguidas.","Levantó la Copa del Mundo dedicándosela a su barrio, Jardim Irene."]},
+ {n:"Sergio Ramos",pos:"DEF",r:90,p:["Tiene el récord de expulsiones en su liga.","Su selección lo usó años como lateral derecho siendo central.","Marcó en dos finales de Champions distintas.","Volvió casi veinte años después al club de su tierra antes de irse a México."]},
+ {n:"Carles Puyol",pos:"DEF",r:88,p:["De niño jugaba de portero en su pueblo.","Cedió el brazalete para levantar un trofeo a un compañero que volvía de una enfermedad.","Marcó de cabeza el gol que llevó a su país a su primera final de Mundial.","Jugó toda su carrera en un solo club."]},
+ {n:"Virgil van Dijk",pos:"DEF",r:89,p:["Trabajó lavando platos en un restaurante de joven.","Pasó por Escocia antes de triunfar en Inglaterra.","Fue el defensa más caro de la historia cuando cambió de club en 2018.","Quedó segundo en un Balón de Oro por detrás de Messi."]},
+ {n:"Roberto Carlos",pos:"DEF",r:88,p:["Pasó por Italia sin triunfar antes de llegar a España.","Su gol de falta en un torneo en Francia parecía desafiar la física.","Fue segundo en el Balón de Oro de 2002.","Después de su etapa más gloriosa jugó en Turquía y en Rusia."]},
+ {n:"Fabio Cannavaro",pos:"DEF",r:88,p:["Medía alrededor de 1,75, bajo para su puesto.","Su hermano también fue defensa en la Serie A.","Siguió a su entrenador a España tras un escándalo en su liga.","Es el último defensa que ha ganado el Balón de Oro."]},
+ {n:"Philipp Lahm",pos:"DEF",r:88,p:["Fue cedido dos temporadas antes de asentarse en el club de su ciudad.","Jugó a máximo nivel de lateral derecho, lateral izquierdo y pivote.","Se retiró con 33 años, en forma y con contrato.","Fue capitán de su selección campeona del mundo."]},
+ {n:"Javier Zanetti",pos:"DEF",r:87,p:["De joven trabajó de albañil con su padre.","Lo dejaron fuera de dos Mundiales estando en su mejor momento.","Ganó un triplete como capitán con 36 años.","Es el jugador con más partidos en la historia de su club italiano."]},
+ {n:"Dani Alves",pos:"DEF",r:87,p:["Llegó a Europa con 19 años a un club andaluz.","Respondió a un insulto racista comiéndose un plátano lanzado al campo.","Ganó la medalla de oro olímpica con 38 años.","Es uno de los futbolistas con más títulos de la historia."]},
+ {n:"Thiago Silva",pos:"DEF",r:87,p:["Estuvo meses ingresado por tuberculosis cuando jugaba en Rusia.","Fue capitán de su selección en un Mundial en casa.","Jugó en la Premier League con 39 años.","Volvió al club de Río donde se formó."]},
+ {n:"Marcelo",pos:"DEF",r:86,p:["Llegó a Europa en pleno invierno con 18 años.","Terminó jugando en Grecia antes de volver a su país.","Se convirtió en el jugador con más títulos de la historia de su club.","Marcó en una final de Champions disputada en Lisboa."]},
+ {n:"Rio Ferdinand",pos:"DEF",r:86,p:["Fue dos veces el defensa más caro del mundo.","Se perdió una Eurocopa por no presentarse a un control antidopaje.","Su hermano también jugó de central en la Premier.","Ganó la Champions en una final bajo la lluvia de Moscú."]},
+ {n:"Giorgio Chiellini",pos:"DEF",r:86,p:["Es licenciado en Economía.","Empezó como lateral izquierdo.","Sufrió un mordisco en un Mundial.","Se hizo viral por tirar de la camiseta de un rival en una final continental."]},
+ {n:"Achraf Hakimi",pos:"DEF",r:86,p:["Pasó por cuatro ligas distintas antes de cumplir 23 años.","Fue cedido a Alemania, donde batió récords de velocidad.","Nació en España pero eligió el país de sus padres.","Eliminó a España de un Mundial con un penalti a lo Panenka."]},
+ {n:"Pepe",pos:"DEF",r:85,p:["Nació en Brasil pero jugó con otra selección.","Le cayeron diez partidos de sanción por agredir a un rival en el suelo.","Jugó la Champions con 41 años.","Ganó una Eurocopa siendo el mejor del partido en la final."]},
+ {n:"Jordi Alba",pos:"DEF",r:85,p:["Su cantera lo dejó marchar por bajito y volvió años después por unos 14 millones.","En Valencia empezó jugando de extremo.","Marcó en una final de Eurocopa.","Terminó en Estados Unidos reuniéndose con antiguos compañeros."]},
+ {n:"Phil Jones",pos:"DEF",r:71,p:["Llegó a un gigante inglés con 19 años desde el Blackburn.","Su entrenador dijo que podía acabar siendo el mejor jugador de la historia del club.","Sus caras de esfuerzo en el campo se convirtieron en memes.","Pasó más de dos años seguidos sin jugar por lesiones."]},
+ {n:"Harry Maguire",pos:"DEF",r:77,p:["Marcó de cabeza en unos cuartos de final de Mundial.","Fue el defensa más caro de la historia cuando fichó en 2019.","Lo detuvieron estando de vacaciones en una isla griega.","Fue capitán de un gigante inglés hasta que le quitaron el brazalete."]},
+ {n:"Yerry Mina",pos:"DEF",r:72,p:["Llegó a Barcelona a mitad de temporada desde un club brasileño.","Apenas jugó y se marchó al Everton tras unos meses.","Marcó tres goles de cabeza en un Mundial siendo central.","Celebra los goles bailando."]},
+ {n:"Shkodran Mustafi",pos:"DEF",r:70,p:["De joven se fue a Inglaterra a la cantera del Everton.","Fue campeón del mundo en 2014.","Pasó por Valencia antes de que un club de Londres pagara unos 40 millones por él.","Sus despistes se volvieron meme entre su propia afición."]},
+ // CENTROCAMPISTAS
+ {n:"Zinedine Zidane",pos:"MED",r:95,p:["Hijo de inmigrantes argelinos, creció en un barrio de Marsella.","Marcó dos goles de cabeza en una final de Mundial.","Su carrera terminó con una expulsión en otra final.","Marcó de volea en una final de Champions en Glasgow."]},
+ {n:"Andrés Iniesta",pos:"MED",r:91,p:["Su familia tiene viñedos en un pueblo muy pequeño.","Lloraba en la residencia de la cantera porque echaba de menos a su familia.","Dedicó su gol más famoso a un amigo fallecido.","Jugó cinco temporadas en Japón."]},
+ {n:"Xavi Hernández",pos:"MED",r:91,p:["Quedó tercero en tres Balones de Oro seguidos.","Fue el mejor jugador de la Eurocopa de 2008.","Fue el jugador con más partidos de su club hasta que lo superó un compañero.","Se retiró en Catar y allí empezó a entrenar."]},
+ {n:"Luka Modrić",pos:"MED",r:90,p:["Creció como refugiado de guerra en un hotel.","De joven fue cedido a la liga bosnia.","Un diario lo eligió en una encuesta como peor fichaje de su primera temporada en España.","Rompió una década de dominio de dos superestrellas en un premio individual."]},
+ {n:"Andrea Pirlo",pos:"MED",r:90,p:["Empezó de mediapunta y lo retrasaron a la base de la jugada.","Su club lo dejó ir gratis y ganó cuatro ligas seguidas con el rival.","Tiró un penalti a lo Panenka a Inglaterra en una Eurocopa.","Su autobiografía se titula 'Pienso, luego juego'."]},
+ {n:"Kevin De Bruyne",pos:"MED",r:90,p:["Un club de Londres lo vendió tras darle muy pocos minutos.","Fue su propio negociador en una renovación, ayudado por analistas de datos.","Se reveló en Alemania antes de volver a Inglaterra.","Ya veterano, se fue a jugar a Nápoles."]},
+ {n:"Pavel Nedvěd",pos:"MED",r:89,p:["Llegó a Italia tras una gran Eurocopa en Inglaterra.","Se perdió una final de Champions por una amarilla en semifinales.","Se quedó con su club tras un descenso administrativo.","Lo apodaban 'La Furia Checa'."]},
+ {n:"Steven Gerrard",pos:"MED",r:88,p:["Un primo suyo murió en la tragedia de Hillsborough.","Remontó un 3-0 en una final de Champions.","Un resbalón suyo costó una liga.","Terminó su carrera en Los Ángeles."]},
+ {n:"Clarence Seedorf",pos:"MED",r:87,p:["Debutó con 16 años en su club formativo.","Ganó la Champions con tres clubes distintos.","Se retiró en Brasil.","Entrenó al club donde más triunfó justo después de retirarse."]},
+ {n:"Bastian Schweinsteiger",pos:"MED",r:87,p:["De joven estuvo a punto de dedicarse al esquí.","Falló un penalti en una final de Champions jugada en su estadio.","Jugó una final de Mundial con la cara ensangrentada.","Se casó con una ex número uno del tenis."]},
+ {n:"Sergio Busquets",pos:"MED",r:87,p:["Su padre fue portero del mismo club.","Debutó con el primer equipo de la mano de su entrenador del filial.","Marcó menos de 20 goles en más de 700 partidos con su club.","Terminó en Miami junto a viejos compañeros."]},
+ {n:"N'Golo Kanté",pos:"MED",r:87,p:["Con más de 20 años todavía jugaba en divisiones menores de su país.","Ganó una liga con un equipo al que las casas de apuestas daban 5000 a 1.","Al año siguiente volvió a ser campeón con otro club.","Fue campeón del mundo y luego se marchó a Arabia Saudí."]},
+ {n:"Juan Román Riquelme",pos:"MED",r:87,p:["En Barcelona su entrenador apenas contó con él.","Llevó a un equipo pequeño a semifinales de Champions.","Falló un penalti en el último minuto de esa semifinal.","Años después fue elegido presidente del club de su vida."]},
+ {n:"Frank Lampard",pos:"MED",r:86,p:["Su padre y su tío fueron figuras del club donde empezó.","Le anularon en un Mundial un gol que entró claramente.","Es el máximo goleador histórico de su club siendo centrocampista.","Terminó su carrera en Nueva York."]},
+ {n:"Gennaro Gattuso",pos:"MED",r:82,p:["Con 19 años se fue a jugar a Escocia.","Se encaró con el ayudante del entrenador rival en un partido de Champions.","Al final de su carrera jugó en Suiza.","Lo apodaban 'Rino'."]},
+ {n:"Philippe Coutinho",pos:"MED",r:78,p:["Llegó a Europa por un club de Milán siendo un adolescente.","Fue uno de los tres fichajes más caros de la historia.","Estando cedido, ganó la Champions marcando dos goles al club que lo había fichado.","Acabó en Catar y luego volvió al club brasileño donde se formó."]},
+ {n:"Arda Turan",pos:"MED",r:74,p:["Le tiró una bota a un juez de línea.","Fue ídolo en el Atlético de Madrid.","Fichó por el Barça cuando estaba sancionado y no pudo jugar en seis meses.","Fue condenado en su país por un incidente con un arma."]},
+ {n:"Kevin-Prince Boateng",pos:"MED",r:73,p:["Su hermano jugó con otra selección distinta a la suya.","Abandonó un amistoso por los insultos racistas de la grada.","Llegó cedido al Barça desde el Sassuolo en el mercado de invierno.","No marcó ningún gol con esa camiseta."]},
+ {n:"Arthur Melo",pos:"MED",r:72,p:["Al llegar a Europa lo comparaban con Xavi.","Salió del Barça en un intercambio con Pjanić muy criticado.","Estuvo cedido en el Liverpool y jugó 13 minutos en toda la temporada.","Venía del Grêmio."]},
+ {n:"Donny van de Beek",pos:"MED",r:70,p:["Marcó el gol de la ida de unas semifinales de Champions en Londres.","Un gigante inglés pagó unos 40 millones y casi no lo puso.","Fue cedido al Everton y al Eintracht.","Acabó fichando por el Girona."]},
+ // DELANTEROS
+ {n:"Ronaldo Nazário",pos:"DEL",r:94,p:["Fue campeón del mundo sin jugar un solo minuto.","Sufrió una convulsión horas antes de una final de Mundial.","Se rompió el tendón rotuliano dos veces.","Marcó un golazo tras una carrera desde el medio campo en Compostela."]},
+ {n:"Ronaldinho",pos:"DEL",r:92,p:["Con 13 años marcó más de 20 goles en un solo partido.","Le marcó de falta, desde muy lejos, a un portero inglés en un Mundial.","Un estadio rival le aplaudió de pie.","Pasó meses detenido en Paraguay por un pasaporte falso."]},
+ {n:"Thierry Henry",pos:"DEL",r:91,p:["Empezó de extremo y su entrenador en Londres lo convirtió en delantero.","Una mano suya clasificó a su país para un Mundial.","Tiene una estatua frente al estadio de su club.","Volvió cedido a su antiguo club inglés y marcó en su regreso."]},
+ {n:"Romário",pos:"DEL",r:90,p:["Hizo un hat-trick en un 5-0 a su gran rival en España.","Fue elegido mejor jugador del Mundial que ganó.","Asegura haber superado los 1000 goles.","Hoy es senador en su país."]},
+ {n:"Robert Lewandowski",pos:"DEL",r:90,p:["Un club de su capital lo descartó de joven por ser demasiado delgado.","Marcó cinco goles en nueve minutos saliendo desde el banquillo.","Se quedó sin Balón de Oro el año que se suspendió por la pandemia.","Su mujer fue medallista mundial de kárate."]},
+ {n:"Erling Haaland",pos:"DEL",r:90,p:["Nació en Inglaterra porque su padre jugaba allí.","Marcó nueve goles en un partido de un Mundial sub-20.","Jugó en Austria antes de dar el salto.","Batió el récord de goles en una temporada de Premier en su primer año."]},
+ {n:"Didier Drogba",pos:"DEL",r:89,p:["Debutó como profesional tarde, en la segunda división francesa.","Pidió un alto el fuego en su país tras clasificarlo para un Mundial.","Jugó en China y en Canadá.","Marcó el penalti decisivo de una final de Champions en Múnich."]},
+ {n:"Samuel Eto'o",pos:"DEL",r:89,p:["Su club formativo lo cedió tres veces y nunca le dio la oportunidad.","Fue el futbolista mejor pagado del mundo jugando en Rusia.","Ganó dos tripletes seguidos con clubes distintos.","Hoy preside la federación de fútbol de su país."]},
+ {n:"Zlatan Ibrahimović",pos:"DEL",r:89,p:["De joven practicó taekwondo.","Llamaba 'el filósofo' a un entrenador con el que chocó en España.","Marcó cuatro goles a Inglaterra en un amistoso, uno de chilena desde 30 metros.","Ganó la liga en cuatro países distintos."]},
+ {n:"Raúl González",pos:"DEL",r:89,p:["Se formó en el gran rival de su ciudad hasta que cerraron la cantera.","Debutó en Primera con 17 años.","Mandó callar a un estadio rival tras marcar.","Terminó jugando en Catar y Nueva York."]},
+ {n:"Gabriel Batistuta",pos:"DEL",r:89,p:["De joven prefería el baloncesto.","Se quedó con su club tras un descenso a la Serie B.","Los aficionados le hicieron una estatua mientras seguía jugando.","Lloró tras marcar a su exequipo el año que ganó la liga en la capital."]},
+ {n:"Luis Suárez",pos:"DEL",r:89,p:["Se mudó a otro país siguiendo a su novia.","Paró con la mano un gol en el último minuto de unos cuartos de un Mundial.","Fue sancionado por morder a rivales en tres ocasiones.","Ganó una liga tras ser apartado por su club anterior."]},
+ {n:"Antoine Griezmann",pos:"DEL",r:88,p:["Fue rechazado por varias canteras de su país por ser bajito.","Lo fichó un club vasco tras verlo en una prueba.","Fue máximo goleador de una Eurocopa que su país perdió en casa.","Celebra los goles con un baile de un videojuego."]},
+ {n:"Fernando Torres",pos:"DEL",r:85,p:["Marcó en dos finales de Eurocopa.","Fue el fichaje más caro de la historia del fútbol británico en 2011.","Volvió cedido y luego en propiedad a su club de la infancia.","Se retiró en Japón."]},
+ {n:"Diego Forlán",pos:"DEL",r:85,p:["De joven jugaba al tenis a buen nivel.","Su padre fue mundialista y su abuelo seleccionador.","Ganó la Bota de Oro con dos clubes distintos de la misma liga.","Fue Balón de Oro de un Mundial en el que su país quedó cuarto."]},
+ {n:"Jamie Vardy",pos:"DEL",r:83,p:["Trabajaba en una fábrica de férulas mientras jugaba en el fútbol amateur.","Tuvo que jugar un tiempo con una pulsera de control judicial.","Marcó en 11 jornadas de liga seguidas.","Ganó una liga contra todo pronóstico."]},
+ {n:"Bojan Krkić",pos:"DEL",r:74,p:["Batió récords de precocidad de Messi en su club.","La ansiedad le hizo renunciar a ir a una Eurocopa con 17 años.","Pasó por Roma, Milan, Ajax y Stoke.","Terminó su carrera en Japón."]},
+ {n:"Eden Hazard",pos:"DEL",r:79,p:["Costó más de 100 millones a un gigante español.","Llegó a su primera pretemporada con kilos de más.","Marcó solo cuatro goles de liga en cuatro temporadas.","Se retiró con 32 años tras brillar siete años en Londres."]},
+ {n:"João Félix",pos:"DEL",r:77,p:["Ganó el premio Golden Boy.","Fue el tercer fichaje más caro de la historia.","Fue cedido al Chelsea y al Barça.","Acabó en Arabia Saudí junto a Cristiano."]},
+ {n:"Mario Balotelli",pos:"DEL",r:77,p:["Le prendió fuego a su propia casa con unos petardos.","Enseñó una camiseta que preguntaba '¿Por qué siempre yo?'.","No consiguió ponerse un peto de entrenamiento delante de las cámaras.","Le marcó dos goles a Alemania en una semifinal de Eurocopa."]},
+ {n:"Antony",pos:"DEL",r:75,p:["Un gigante inglés pagó casi 100 millones por él.","Se hizo famoso por girar sobre sí mismo con el balón sin motivo.","Venía del Ajax.","Revivió cedido en el Betis."]},
+ {n:"Luuk de Jong",pos:"DEL",r:74,p:["Su hermano también fue internacional.","Fue máximo goleador de la Eredivisie con el PSV.","Marcó dos goles en una final de Europa League con el Sevilla.","Llegó cedido al Barça el último día del mercado."]},
+ {n:"Ansu Fati",pos:"DEL",r:72,p:["Nació en Guinea-Bisáu.","Heredó el dorsal 10 de Messi.","Las lesiones de rodilla frenaron una carrera que empezó con récords de precocidad.","Fue cedido al Brighton y al Mónaco."]},
+ {n:"Luka Jović",pos:"DEL",r:72,p:["Brilló en el Eintracht Fráncfort.","Costó unos 60 millones a un gigante español.","Lo sancionaron por saltarse la cuarentena durante la pandemia.","Acabó en el Milan."]},
+ {n:"Andy Carroll",pos:"DEL",r:70,p:["Fue el fichaje inglés más caro de la historia en 2011.","Llegó a su nuevo club el mismo día que Luis Suárez.","Era famoso por su coleta y su juego de cabeza.","Pasó luego muchos años en el West Ham."]},
+ {n:"Martin Braithwaite",pos:"DEL",r:70,p:["Pasó por el Toulouse y el Middlesbrough.","Venía del Leganés.","Lo fichó un gigante español fuera de mercado por la lesión de otro delantero.","Muchos aficionados no sabían quién era el día que llegó."]},
+ // ENTRENADORES
+ {n:"Alex Ferguson",pos:"DT",r:94,p:["De joven trabajó en los astilleros de su ciudad.","Ganó una Recopa con un club escocés ante el Real Madrid.","Una bota que lanzó en el vestuario le abrió la ceja a su estrella.","Dirigió más de 26 años al mismo club."]},
+ {n:"Pep Guardiola",pos:"DT",r:95,p:["Como jugador acabó su carrera en Catar y en México.","Empezó entrenando al filial en Tercera División.","Se tomó un año sabático en Nueva York.","Ganó dos tripletes con clubes distintos."]},
+ {n:"Carlo Ancelotti",pos:"DT",r:93,p:["Fue centrocampista de un equipo legendario de finales de los 80.","Ha ganado la liga en las cinco grandes ligas de Europa.","Dirige a una selección sudamericana.","Es el entrenador con más Champions de la historia."]},
+ {n:"José Mourinho",pos:"DT",r:91,p:["Empezó como traductor de un entrenador inglés.","Ganó una Champions con un club portugués.","Se presentó en Londres llamándose a sí mismo 'especial'.","Ganó un triplete con un club italiano."]},
+ {n:"Jürgen Klopp",pos:"DT",r:90,p:["Como jugador fue casi siempre defensa en la segunda división de su país.","Se presentó en Inglaterra como 'el normal'.","Ganó una liga que su club no ganaba desde hacía 30 años.","Hoy trabaja para una marca de bebidas energéticas."]},
+ {n:"Luis Enrique",pos:"DT",r:89,p:["Jugó en los dos grandes rivales de su liga.","Le rompieron la nariz de un codazo en un Mundial.","Corre maratones y ha completado un Ironman.","Ganó un triplete con un club francés."]},
+ {n:"Diego Simeone",pos:"DT",r:88,p:["Como jugador ganó la liga con el club que luego entrenó.","Provocó la expulsión de una estrella inglesa en un Mundial.","Llegó al banquillo a mitad de temporada en diciembre de 2011.","Lleva más de una década en el mismo banquillo."]},
+ {n:"Vicente del Bosque",pos:"DT",r:87,p:["Fue centrocampista casi toda su carrera en un solo club grande.","Su club no le renovó justo después de ganar la liga.","Fue nombrado marqués.","Ganó un Mundial y una Eurocopa con su selección."]},
+ {n:"Julen Lopetegui",pos:"DT",r:79,p:["Como portero fue suplente en los dos grandes de España.","Lo destituyeron de su selección a dos días de un Mundial.","Duró unos cuatro meses en su nuevo club y lo echaron tras un 5-1 en el Clásico.","Se resarció ganando una Europa League en Sevilla."]},
+ {n:"Roberto Di Matteo",pos:"DT",r:77,p:["Como jugador marcó a los 42 segundos en una final de FA Cup.","Llegó al banquillo como interino a mitad de temporada.","Ganó la Champions ese mismo año.","Lo despidieron seis meses después."]},
+ {n:"Ole Gunnar Solskjær",pos:"DT",r:74,p:["Como jugador lo llamaban 'el asesino con cara de niño'.","Marcó cuatro goles en doce minutos saliendo desde el banquillo.","Entrenó al Molde y al Cardiff.","Volvió a su exclub como interino en diciembre de 2018."]},
+ {n:"Santiago Solari",pos:"DT",r:70,p:["Como jugador ganó una Champions con el Madrid.","Subió desde el filial tras el despido de su predecesor.","Ganó un Mundial de Clubes como entrenador del primer equipo.","Después entrenó al América de México."]},
+ {n:"Marcelo Bielsa",pos:"DT",r:85,p:["Su apodo está relacionado con la locura.","Llevó a un club vasco a dos finales en la misma temporada.","Admitió haber mandado espiar un entrenamiento rival en Inglaterra.","Dirige a una selección sudamericana que no es la suya."]},
+];
+
+// ---------- Utilidades ----------
+const app = document.getElementById("app");
+const esc = s => String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const shuffle = a => {a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+const avg = a => a.length ? a.reduce((s,x)=>s+x,0)/a.length : 60;
+// En online solo el anfitrión guarda; cada cambio suyo se envía a la sala
+const save = () => {
+  if(NET.role==="client") return;
+  try{ localStorage.setItem("subasta-v3", JSON.stringify(S)); }catch(e){}
+  broadcast();
+};
+const load = () => { try{ return JSON.parse(localStorage.getItem("subasta-v3")||"null"); }catch(e){ return null; } };
+
+let S = null, timer = null, paused = false;
+let names = ["Ana","Leo","Mario"], laps = 2;
+let saved = load();
+if(saved && saved.names) names = saved.names;
+
+// ---------- Online: el anfitrión manda, los demás envían acciones ----------
+const NET = {role:"local", room:null, code:"", seat:-1, myPeer:null, hostPeer:null, seq:0, lastAt:0};
+let ROOM = null, roomChecked = false, btimer = null, hbtimer = null;
+if(window.Peer){ ROOM={join:name=>peerRoom(name.replace(/^sub-/,""))}; } roomChecked=true;
+// Conexión directa entre navegadores (PeerJS). El anfitrión es el centro: los demás se conectan a él.
+const PEER_PREFIX = "subasta-futbolera-";
+function peerRoom(code){
+  return new Promise((resolve,reject)=>{
+    const isHost = NET.role==="host";
+    const handlers = {}, peerFns = [];
+    const conns = new Map();               // anfitrión: id del invitado -> conexión
+    let hostConn = null, me = null, done = false;
+    const peer = isHost ? new Peer(PEER_PREFIX+code.toLowerCase()) : new Peer();
+    const list = () => [{peer:me,sameTab:true}, ...(isHost ? [...conns.keys()] : (hostConn&&hostConn.open?[hostConn.peer]:[])).map(id=>({peer:id,sameTab:false}))];
+    const notify = joined => { const ps=list(); peerFns.forEach(f=>f({peers:ps,joined,left:[],updated:[]})); };
+    const deliver = (from,raw) => { if(!raw||typeof raw!=="object") return; (handlers[raw.topic]||[]).forEach(f=>f({peer:from,sameTab:false,data:raw.data})); };
+    const api = {
+      emit(topic,data){
+        const m={topic,data};
+        if(isHost) conns.forEach(c=>{ if(c.open) c.send(m); });
+        else if(hostConn&&hostConn.open) hostConn.send(m);
+        return Promise.resolve();
+      },
+      on(topic,fn){ (handlers[topic]=handlers[topic]||[]).push(fn); return ()=>{}; },
+      peers: list,
+      onPeers(fn){ peerFns.push(fn); setTimeout(()=>fn({peers:list(),joined:list(),left:[],updated:[]}),0); return ()=>{}; },
+      leave(){ try{ peer.destroy(); }catch(e){} return Promise.resolve(); },
+    };
+    peer.on("open", id=>{
+      me=id;
+      if(isHost){ done=true; return resolve(api); }
+      hostConn = peer.connect(PEER_PREFIX+code.toLowerCase(), {reliable:true});
+      hostConn.on("open", ()=>{ done=true; resolve(api); notify(list()); });
+      hostConn.on("data", d=>deliver(hostConn.peer,d));
+      hostConn.on("close", ()=>notify([]));
+    });
+    if(isHost) peer.on("connection", c=>{
+      c.on("open", ()=>{ conns.set(c.peer,c); notify([{peer:c.peer,sameTab:false}]); });
+      c.on("data", d=>deliver(c.peer,d));
+      c.on("close", ()=>{ conns.delete(c.peer); notify([]); });
+    });
+    // si se corta con el servidor de enlace, se reintenta sin perder las conexiones abiertas
+    peer.on("disconnected", ()=>{ try{ peer.reconnect(); }catch(e){} });
+    peer.on("error", e=>{
+      if(done) return;
+      const why = e.type==="peer-unavailable" ? "No hay ninguna partida abierta con ese código."
+        : e.type==="unavailable-id" ? "Ese código ya está en uso. Crea otra partida."
+        : "No se ha podido conectar. Revisa tu internet e inténtalo de nuevo.";
+      try{ peer.destroy(); }catch(_){}
+      reject(new Error(why));
+    });
+    setTimeout(()=>{ if(!done){ try{ peer.destroy(); }catch(_){} reject(new Error("La conexión tarda demasiado. Comprueba el código e inténtalo de nuevo.")); } },15000);
+  });
+}
+
+const POSL = ["POR","DEF","MED","DEL","DT"];
+const NAME_IDX = Object.fromEntries(POOL.map((p,i)=>[p.n,i]));
+const pidx = x => NAME_IDX[x.n] ?? (-1 - Math.max(0,POSL.indexOf(x.pos)));
+const fromIdx = (i,price) => i>=0 ? {n:POOL[i].n,pos:POOL[i].pos,r:POOL[i].r,price} : {n:POSL[-1-i]==="DT"?"Segundo entrenador":"Canterano",pos:POSL[-1-i],r:62,price};
+const gpack = g => [g.m, NAME_IDX[g.n] ?? -1];
+const gunpack = ([m,i]) => ({m, n: i>=0 ? POOL[i].n : "Canterano"});
+const resPack = r => r && {...r, sh:r.sh.map(gpack), sa:r.sa.map(gpack)};
+const resUnpack = r => r && {...r, sh:r.sh.map(gunpack), sa:r.sa.map(gunpack)};
+function pack(){
+  const o={...S, deck:undefined, dl:S.deck?S.deck.length:0, pz:paused, seq:NET.seq};
+  if(S.m) o.m=S.m.map(m=>({b:m.budget,s:m.skips,r:m.roster.map(x=>[pidx(x),x.price])}));
+  if(S.fx) o.fx=S.fx.map(f=>({h:f.h,a:f.a,res:resPack(f.res)}));
+  if(S.playoff) o.playoff={...S.playoff,res:resPack(S.playoff.res)};
+  // los mensajes de la sala tienen un límite de 4 KB: si no cabe, se quitan los goleadores
+  if(JSON.stringify(o).length>3900 && o.fx) o.fx.forEach(f=>{ if(f.res){ f.res.sh=[]; f.res.sa=[]; } });
+  return o;
+}
+function unpack(o){
+  const s={...o};
+  s.deck=new Array(o.dl||0); paused=!!o.pz;
+  if(o.m) s.m=o.m.map(m=>({budget:m.b,skips:m.s,roster:m.r.map(([i,p])=>fromIdx(i,p))}));
+  if(o.fx) s.fx=o.fx.map(f=>({h:f.h,a:f.a,res:resUnpack(f.res)}));
+  if(o.playoff) s.playoff={...o.playoff,res:resUnpack(o.playoff.res)};
+  return s;
+}
+function broadcast(){
+  if(NET.role!=="host"||!NET.room) return;
+  clearTimeout(btimer);
+  btimer=setTimeout(()=>{ NET.seq++; NET.room.emit("state",pack()).catch(()=>{}); },40);
+}
+const mine = i => NET.role==="local" || i===NET.seat;
+const cleanName = s => String(s||"").replace(/[\u0000-\u001f]/g,"").trim().slice(0,16) || "Invitado";
+const genCode = () => Array.from({length:4},()=>"ABCDEFGHJKMNPQRSTUVWXYZ23456789"[Math.floor(Math.random()*31)]).join("");
+
+// Acciones: en local y en el anfitrión se ejecutan; un invitado se las manda al anfitrión
+const LOCAL = {
+  bid:(mi,inc)=>bid(mi,inc), skip:mi=>skip(mi), mini:(mi,r)=>miniPress(mi,r),
+  clue:()=>revealClue(), pause:()=>togglePause(),
+  next:()=>{ if(S.phase==="auction"&&S.lot&&S.lot.sold) nextLot(); },
+  hammer:()=>{ if(S.phase==="auction"&&S.lot&&!S.lot.sold&&S.lot.leader>=0) sell(); },
+  minigo:()=>{ if(S.lot&&S.lot.mini) miniStart(); },
+  play:()=>{ if(S.phase==="league") playNext(); }, all:()=>{ if(S.phase==="league") playAll(); },
+  po:()=>{ if(S.playoff&&!S.playoff.res) playPlayoff(); }, replay:()=>{ if(S.phase==="final") replayLeague(); },
+};
+const SEATED = ["bid","skip","mini"];
+function A(name,...args){
+  if(NET.role!=="client") return LOCAL[name](...args);
+  if(NET.seat<0) return;
+  NET.room.emit("act",{a:name,args:SEATED.includes(name)?args.slice(1):args}).catch(()=>{});
+}
+function onAct(msg){
+  if(!S||msg.sameTab) return;
+  const d=msg.data||{}, seat=(S.seats||[]).findIndex(s=>s.peer===msg.peer);
+  if(seat<0 || !LOCAL[d.a]) return;
+  const args=Array.isArray(d.args)?d.args:[];
+  if(SEATED.includes(d.a)) LOCAL[d.a](seat,...args); else LOCAL[d.a](...args);
+}
+function onHello(msg){
+  if(!S||msg.sameTab) return;
+  const name=cleanName(msg.data&&msg.data.name), seats=S.seats;
+  if(seats.some(s=>s.peer===msg.peer)) return broadcast();
+  const here=new Set(NET.room.peers().map(p=>p.peer));
+  // alguien que recarga vuelve a su sitio por su nombre
+  const back=seats.findIndex((s,k)=>k>0 && s.name===name && !here.has(s.peer));
+  if(back>=0) seats[back].peer=msg.peer;
+  else if(S.phase==="lobby" && seats.length<3){
+    let nm=name, n=2; while(seats.some(s=>s.name===nm)) nm=(name+" "+n++).slice(0,16);
+    seats.push({peer:msg.peer,name:nm});
+    S.names=seats.map(s=>s.name);
+  }
+  save(); if(S.phase==="lobby") renderLobby();
+}
+async function joinRoom(code){
+  const r=await ROOM.join("sub-"+code.toLowerCase());
+  NET.room=r; NET.code=code;
+  r.onPeers(ch=>{
+    const me=ch.peers.find(p=>p.sameTab); if(me) NET.myPeer=me.peer;
+    if(NET.role==="host" && ch.joined.length) broadcast();
+    if(NET.role==="client" && S) { NET.seat=(S.seats||[]).findIndex(s=>s.peer===NET.myPeer); }
+    netbar();
+  });
+  return r;
+}
+async function hostGame(name, resume){
+  const code=resume?resume.code:genCode();
+  NET.role="host"; NET.seat=0;
+  try{ await joinRoom(code); }catch(e){ NET.role="local"; return setupMsg(e.message||"No se ha podido abrir la sala. Inténtalo de nuevo."); }
+  NET.room.on("hello",onHello); NET.room.on("act",onAct);
+  clearInterval(hbtimer); hbtimer=setInterval(broadcast,2500);
+  if(resume){ S=resume; return route(); }
+  S={phase:"lobby", code, seats:[{peer:null,name:cleanName(name),host:true}], names:[cleanName(name)], laps};
+  save(); renderLobby();
+}
+async function joinGame(code,name){
+  code=code.toUpperCase().replace(/[^A-Z0-9]/g,"");
+  if(code.length!==4) return setupMsg("El código tiene 4 letras o números.");
+  NET.role="client"; NET.name=cleanName(name); S=null;
+  try{ await joinRoom(code); }catch(e){ NET.role="local"; return setupMsg(e.message||"No se ha podido entrar en esa sala."); }
+  let prevClues=0;
+  NET.room.on("state",msg=>{
+    const o=msg.data; if(!o||o.code!==NET.code) return;
+    if(NET.hostPeer && msg.peer!==NET.hostPeer) return;
+    if(NET.hostPeer===msg.peer && o.seq<=NET.seq) return;
+    NET.hostPeer=msg.peer; NET.seq=o.seq; NET.lastAt=Date.now();
+    S=unpack(o); NET.seat=S.seats.findIndex(s=>s.peer===NET.myPeer);
+    if(S.phase==="lobby") renderLobby();
+    else if(S.phase==="auction"){ const nc=S.lot.clues!==prevClues; prevClues=S.lot.clues; renderAuction(false,nc); }
+    else renderLeague();
+    netbar();
+  });
+  const hello=()=>{ if(NET.role==="client" && NET.seat<0) NET.room.emit("hello",{name:NET.name}).catch(()=>{}); };
+  hello(); clearInterval(hbtimer); hbtimer=setInterval(()=>{ hello(); netbar(); },2000);
+  app.innerHTML=`<section class="box"><span class="label">Sala ${esc(code)}</span><h2 style="font-size:2rem">Buscando al anfitrión…</h2><p class="note">Si tarda, comprueba el código y que el anfitrión tenga la partida abierta.</p></section>`;
+  netbar();
+}
+function leaveOnline(){
+  clearInterval(hbtimer); if(NET.room) NET.room.leave().catch(()=>{});
+  Object.assign(NET,{role:"local",room:null,code:"",seat:-1,myPeer:null,hostPeer:null,seq:0,lastAt:0});
+  S=null; netbar(); renderSetup();
+}
+function netbar(){
+  const el=document.getElementById("netbar"); if(!el) return;
+  if(NET.role==="local"){ el.hidden=true; return; }
+  el.hidden=false;
+  const who = NET.seat>=0 && S && S.seats && S.seats[NET.seat] ? `Eres <b style="color:${COLORS[NET.seat]}">${esc(S.seats[NET.seat].name)}</b>` : (NET.role==="client"&&S?"Estás mirando":"Conectando…");
+  const lost = NET.role==="client" && NET.lastAt && Date.now()-NET.lastAt>8000;
+  el.innerHTML=`<span>Online · sala <b class="mono">${esc(NET.code)}</b> · ${NET.role==="host"?"Eres el anfitrión":who}</span>${lost?`<span style="color:var(--bad)">Sin señal del anfitrión</span>`:""}<button class="btn ghost sm" id="leave">Salir</button>`;
+  document.getElementById("leave").onclick=leaveOnline;
+}
+function setupMsg(t){ const el=document.getElementById("onmsg"); if(el) el.textContent=t; }
+function renderLobby(){
+  stop();
+  const seats=S.seats, isHost=NET.role==="host";
+  app.innerHTML=`
+  <header class="hero"><span class="label">Sala de espera</span><h1>Código <span class="mono">${esc(S.code)}</span></h1>
+    <p>Pasa este código a tus amigos. Solo tienen que abrir este mismo enlace, escribir el código y pulsar <b>Unirse</b>.</p></header>
+  <section class="teams">${[0,1,2].map(i=>`<div class="team" style="--c:${COLORS[i]}"><div class="top"><span class="nm">${seats[i]?esc(seats[i].name):"Libre"}</span><span class="note">${seats[i]?(seats[i].host?"Anfitrión":"Listo"):"Esperando…"}</span></div><span class="note">Mánager ${i+1}</span></div>`).join("")}</section>
+  ${isHost?`<div class="box"><span class="label">Liga</span>
+      <div class="seg" id="laps"><button data-l="2" aria-pressed="${S.laps===2}">Ida y vuelta</button><button data-l="4" aria-pressed="${S.laps===4}">Doble vuelta</button></div>
+      <div class="row"><button class="btn amber" id="gostart" ${seats.length<3?"disabled":""}>Empezar subasta</button><span class="note">${seats.length<3?`Faltan ${3-seats.length} mánagers`:"Estáis los tres"}</span></div></div>`
+    :`<p class="note">Esperando a que el anfitrión empiece la subasta.</p>`}`;
+  if(isHost){
+    app.querySelectorAll("#laps button").forEach(b=>b.onclick=()=>{S.laps=+b.dataset.l;save();renderLobby()});
+    document.getElementById("gostart").onclick=()=>{ names=S.seats.map(s=>s.name); laps=S.laps; startAuction(); };
+  }
+}
+
+// ---------- Portada ----------
+function renderSetup(){
+  stop();
+  const resumable = saved && saved.phase && saved.phase!=="setup";
+  app.innerHTML = `
+  <header class="hero">
+    <span class="label">Tres mánagers · un solo ordenador</span>
+    <h1>Subasta <span>Futbolera</span></h1>
+    <p>Sale a subasta un futbolista misterioso. Solo sabéis su posición y unas pistas que se van destapando. Pujad sin saber quién es, montad un once con entrenador y que decida la liga.</p>
+  </header>
+  ${resumable?`<div class="box" style="flex-direction:row;justify-content:space-between;align-items:center;flex-wrap:wrap"><span>Hay una partida ${saved.code?"online ":""}a medias guardada en este navegador.</span><button class="btn amber" id="resume">Continuar partida</button></div>`:""}
+  <section class="box">
+    <span class="label">Jugar online · cada uno desde su casa</span>
+    ${ROOM?`<div class="online-grid">
+      <div class="field"><label class="label" for="on-name">Tu nombre</label><input id="on-name" maxlength="16" style="--c:var(--amber)" value="${esc(names[0])}"></div>
+      <div class="field"><label class="label">Crear sala</label><button class="btn amber" id="host">Crear partida</button></div>
+      <div class="field"><label class="label" for="on-code">Código de sala</label><input id="on-code" maxlength="4" style="--c:var(--amber);text-transform:uppercase" placeholder="ABCD"></div>
+      <div class="field"><label class="label">Entrar</label><button class="btn ghost" id="join">Unirse</button></div>
+    </div><p class="flash" id="onmsg"></p>`
+    :`<p class="note">${roomChecked?"No se ha podido cargar el modo online. Comprueba tu conexión a internet y recarga la página.":"Comprobando si se puede jugar online…"}</p>`}
+  </section>
+  <p class="label">O los tres en este ordenador</p>
+  <section class="setup">
+    <div class="box">
+      <span class="label">Mánagers</span>
+      ${[0,1,2].map(i=>`<div class="field"><label class="label" for="m${i}">Mánager ${i+1} · pujas ${KEYS[i].join(" ").toUpperCase()} · skip ${SKIPKEYS[i].toUpperCase()}</label><input id="m${i}" maxlength="16" style="--c:${COLORS[i]}" value="${esc(names[i])}"></div>`).join("")}
+      <span class="label">Liga</span>
+      <div class="seg" id="laps">
+        <button data-l="2" aria-pressed="${laps===2}">Ida y vuelta · 4 partidos por equipo</button>
+        <button data-l="4" aria-pressed="${laps===4}">Doble vuelta · 8 partidos</button>
+      </div>
+    </div>
+    <div class="box">
+      <span class="label">Reglas</span>
+      <ul class="rules">
+        <li>Cada mánager tiene <b>${BUDGET} M</b> para fichar <b>${SQUAD}</b>: once titular en 4-3-3 y un <b>entrenador</b>.</li>
+        <li class="formation">1 POR · 4 DEF · 3 MED · 3 DEL · 1 DT</li>
+        <li>Cada lote empieza con una pista. Las demás se destapan a mano con <b>Siguiente pista</b> o la barra espaciadora, hasta cuatro.</li>
+        <li>Cada lote tiene un <b>precio de salida</b> al azar, de 2 a 15 M. No tiene nada que ver con lo bueno que sea el jugador.</li>
+        <li>La primera puja paga la salida (o salida +5 / +10). Después se sube de <b>+1, +5 o +10 M</b>, con los botones o las teclas.</li>
+        <li>En cuanto alguien puja empieza la cuenta: <b>${CD} s</b> desde la última puja, falten pistas o no. A la una, a las dos… ¡vendido!</li>
+        <li>Cada mánager tiene <b>${SKIPS} skips</b> por partida (teclas ${SKIPKEYS.join(" ").toUpperCase()}). Si nadie puja, el que no haya pasado <b>se queda el jugador por el precio de salida</b>, también si ya no le quedan skips.</li>
+        <li>Si son dos o tres los que no pujan ni pasan, se juegan un <b>minijuego de reflejos</b>: el más lento se lo queda por la salida.</li>
+        <li>No puedes pujar por un puesto que ya tienes completo, y siempre te tiene que quedar <b>1 M por hueco libre</b>.</li>
+        <li>La calidad real (media) solo se descubre al venderse. Si todos pasan, el lote queda desierto.</li>
+        <li>Ojo: no todos son cracks. Hay fichajes fallidos y auténticos timos con historias de equipo grande. La pista te puede engañar.</li>
+        <li>Los huecos que queden vacíos al final se rellenan con canteranos de media 62.</li>
+        <li>Si dos equipos acaban empatados a puntos, el título se decide en un <b>partido de desempate</b> con prórroga y penaltis.</li>
+      </ul>
+      <button class="btn amber" id="start">Empezar subasta</button>
+      <p class="note">${POOL.length} lotes: ${Object.keys(SLOTS).map(k=>POOL.filter(p=>p.pos===k).length+" "+k).join(" · ")}.</p>
+    </div>
+  </section>`;
+  app.querySelectorAll("#laps button").forEach(b=>b.onclick=()=>{readNames();laps=+b.dataset.l;renderSetup()});
+  document.getElementById("start").onclick=()=>{readNames();startAuction()};
+  const r=document.getElementById("resume"); if(r) r.onclick=()=>{ if(saved.code&&ROOM) return hostGame(saved.seats[0].name,saved); S=saved; route(); };
+  const h=document.getElementById("host"); if(h) h.onclick=()=>hostGame(document.getElementById("on-name").value);
+  const j=document.getElementById("join"); if(j) j.onclick=()=>joinGame(document.getElementById("on-code").value,document.getElementById("on-name").value);
+}
+function readNames(){ names=[0,1,2].map(i=>(document.getElementById("m"+i).value.trim()||"Mánager "+(i+1))); }
+
+// ---------- Subasta ----------
+const SKIPS = 3, SKIPKEYS = ["r","m","l"];
+function startAuction(){
+  const online = NET.role==="host" ? {code:S.code, seats:S.seats} : {};
+  S = {phase:"auction", names, laps, m:names.map(()=>({budget:BUDGET, roster:[], skips:SKIPS})), deck:shuffle(POOL.map((_,i)=>i)), di:-1, lot:null, sales:0, ...online};
+  nextLot();
+}
+const count = (m,pos) => m.roster.filter(x=>x.pos===pos).length;
+const needs = (m,pos) => SLOTS[pos]-count(m,pos);
+const free = m => SQUAD - m.roster.length;
+const maxBid = m => m.budget - (free(m)-1);
+function anyoneNeeds(pos){ return S.m.some(m=>needs(m,pos)>0 && maxBid(m)>=1); }
+// Puede entrar en este lote: necesita el puesto y llega al precio de salida
+const eligible = mi => { const L=S.lot, m=S.m[mi]; return needs(m,POOL[L.pi].pos)>0 && maxBid(m)>=L.salida; };
+// Quien no puja ni pasa: si nadie puja, a estos les toca el jugador
+const stuck = () => [0,1,2].filter(i=>eligible(i) && !S.lot.skipped[i]);
+
+function nextLot(){
+  stopMini();
+  if(S.m.every(m=>free(m)===0)) return toLeague();
+  do { S.di++; } while(S.di < S.deck.length && !anyoneNeeds(POOL[S.deck[S.di]].pos));
+  if(S.di >= S.deck.length) return toLeague();
+  const pos=POOL[S.deck[S.di]].pos;
+  // salida al azar, sin relación con la media del jugador
+  const reach=Math.max(...S.m.filter(m=>needs(m,pos)>0).map(maxBid));
+  const salida=Math.max(1,Math.min(reach, 2+Math.floor(Math.random()*14)));
+  S.lot = {pi:S.deck[S.di], salida, clues:1, bid:0, leader:-1, cd:0, idle:0, skipped:[false,false,false], sold:null, mini:null, msg:""};
+  S.phase = "auction"; paused = false;
+  save(); renderAuction(true); run();
+}
+const priceFor = inc => S.lot.leader<0 ? S.lot.salida + (inc===1?0:inc) : S.lot.bid+inc;
+function why(mi){
+  const L=S.lot, m=S.m[mi], pos=POOL[L.pi].pos;
+  if(needs(m,pos)<=0) return `Ya tiene ${pos==="DT"?"entrenador":"todos los "+pos}`;
+  if(maxBid(m)<L.salida) return `No llega a la salida (máx. ${maxBid(m)} M)`;
+  if(L.skipped[mi]) return "Ha pasado de este jugador";
+  if(L.leader===mi) return "Va ganando";
+  if(maxBid(m)<priceFor(1)) return `Puja máxima: ${maxBid(m)} M`;
+  return `Puede llegar a ${maxBid(m)} M`;
+}
+function canRaise(mi,inc){
+  const L=S.lot;
+  return !L.sold && !L.mini && !paused && L.leader!==mi && !L.skipped[mi] && eligible(mi) && priceFor(inc)<=maxBid(S.m[mi]);
+}
+function canSkip(mi){
+  const L=S.lot;
+  return !L.sold && !L.mini && !paused && L.leader<0 && !L.skipped[mi] && eligible(mi) && S.m[mi].skips>0;
+}
+function bid(mi,inc){
+  const L=S.lot; if(!L || L.sold || L.mini || S.phase!=="auction") return;
+  if(L.leader===mi){ L.msg=`${S.names[mi]} ya va ganando la puja.`; return renderAuction(); }
+  if(!canRaise(mi,inc)){ L.msg=`${S.names[mi]} no puede pujar ${priceFor(inc)} M. ${why(mi)}.`; return renderAuction(); }
+  L.bid=priceFor(inc); L.leader=mi; L.cd=CD; L.idle=0; L.msg="";
+  save(); renderAuction();
+}
+function skip(mi){
+  const L=S.lot; if(!L || L.sold || L.mini || S.phase!=="auction") return;
+  if(!canSkip(mi)){
+    L.msg = L.leader>=0 ? "Ya hay una puja: no hace falta pasar." : S.m[mi].skips<=0 ? `${S.names[mi]} no tiene skips.` : `${S.names[mi]} no puede pasar ahora.`;
+    return renderAuction();
+  }
+  S.m[mi].skips--; L.skipped[mi]=true; L.msg=`${S.names[mi]} pasa. Le quedan ${S.m[mi].skips} skips.`;
+  if(stuck().length===0) return resolveNoBid();
+  save(); renderAuction();
+}
+function assign(mi,price,via){
+  const L=S.lot, p=POOL[L.pi], m=S.m[mi];
+  m.budget-=price; m.roster.push({n:p.n,pos:p.pos,r:p.r,price});
+  L.sold={to:mi,price,via}; S.sales++;
+  L.clues=4; stop(); save(); renderAuction();
+}
+function sell(){
+  const L=S.lot;
+  if(L.leader>=0) return assign(L.leader,L.bid,"puja");
+  resolveNoBid();
+}
+function resolveNoBid(){
+  const L=S.lot, c=stuck();
+  if(c.length===0){ L.sold={to:-1}; L.clues=4; stop(); save(); return renderAuction(); }
+  if(c.length===1) return assign(c[0],L.salida,"obligado");
+  stop(); L.mini={who:c, phase:"ready", pressed:[], loser:null, early:null};
+  save(); renderAuction();
+}
+function togglePause(){ if(!S.lot||S.lot.sold) return; paused=!paused; save(); renderAuction(); }
+function run(){
+  stop();
+  if(NET.role==="client") return;
+  timer=setInterval(()=>{
+    const L=S&&S.lot; if(!L||L.sold||L.mini||paused||S.phase!=="auction") return;
+    // con una puja en marcha la cuenta atrás corre aunque falten pistas
+    if(L.leader>=0){ L.cd--; if(L.cd<=0) return sell(); }
+    else if(L.clues>=4){ L.idle++; if(L.idle>=IDLE_LIMIT) return resolveNoBid(); }
+    else return;
+    tickUI(); broadcast();
+  },1000);
+}
+function revealClue(){
+  const L=S&&S.lot; if(!L||L.sold||L.mini||paused||L.clues>=4) return;
+  L.clues++;
+  if(L.clues===4) L.idle=0;
+  save(); renderAuction(false,true);
+}
+function stop(){ if(timer){clearInterval(timer);timer=null;} }
+
+// ---------- Minijuego: reflejos ----------
+let miniTimer=null;
+function stopMini(){ if(miniTimer){clearTimeout(miniTimer);miniTimer=null;} }
+function miniStart(){
+  const M=S.lot.mini; if(!M||M.phase!=="ready") return;
+  M.phase="wait"; save(); renderAuction();
+  miniTimer=setTimeout(()=>{
+    M.phase="go"; save(); renderAuction();
+    // quien no pulse en 6 s pierde
+    miniTimer=setTimeout(()=>{ if(M.phase==="go") miniEnd(M.who.find(i=>!M.pressed.some(x=>x.i===i))); },6000);
+  }, 1500+Math.random()*3000);
+}
+// Cada pantalla mide su propio tiempo de reacción desde que ve "¡YA!", así la conexión no cuenta
+let miniT0=0, miniKey="";
+function pressMini(mi){
+  const M=S&&S.lot&&S.lot.mini; if(!M||!mine(mi)) return;
+  if(M.phase==="wait") return A("mini",mi,{early:true});
+  if(M.phase==="go") A("mini",mi,{ms:Math.round(performance.now()-miniT0)});
+}
+function miniPress(mi,r={}){
+  const M=S.lot&&S.lot.mini; if(!M||!M.who.includes(mi)||M.pressed.some(x=>x.i===mi)) return;
+  if(M.phase!=="wait"&&M.phase!=="go") return;
+  if(r.early||M.phase==="wait"){ M.early=mi; return miniEnd(mi); }
+  M.pressed.push({i:mi,ms:Math.max(0,Math.min(60000,Math.round(+r.ms||0)))});
+  const rest=M.who.filter(i=>!M.pressed.some(x=>x.i===i));
+  if(NET.role==="local"&&rest.length===1) return miniEnd(rest[0]);
+  if(rest.length===0) return miniEnd(M.pressed.reduce((a,b)=>b.ms>a.ms?b:a).i);
+  save(); renderAuction();
+}
+function miniEnd(loser){
+  stopMini();
+  const M=S.lot.mini; M.phase="done"; M.loser=loser;
+  assign(loser,S.lot.salida,"minijuego");
+}
+function miniHTML(){
+  const M=S.lot.mini, n=i=>`<b style="color:${COLORS[i]}">${esc(S.names[i])}</b>`;
+  const w=M.who.map(n), who=w.length===2?`${w[0]} y ${w[1]}`:`${w[0]}, ${w[1]} y ${w[2]}`;
+  const btns=M.who.map(i=>`<button class="bid mini" data-mini="${i}" style="--c:${COLORS[i]}" ${M.phase==="ready"||M.phase==="done"||!mine(i)?"disabled":""}>${esc(S.names[i])}<kbd>${mine(i)?keysOf(i).join(" ").toUpperCase():"remoto"}</kbd></button>`).join("");
+  let state="";
+  if(M.phase==="ready") state=`<p style="margin:0">Nadie ha pujado y ${who} no han pasado. Se juegan quién se queda con el jugador por <b>${S.lot.salida} M</b>.</p>
+    <p style="margin:0;color:var(--muted)"><b>Reflejos:</b> cuando salga <b>¡YA!</b>, pulsa cualquiera de tus teclas o tu botón. El último en pulsar, o el que se adelante, se lo queda.</p>
+    <button class="btn amber" id="minigo">Empezar minijuego</button>`;
+  else if(M.phase==="wait") state=`<div class="mini-light wait">Espera…</div>`;
+  else if(M.phase==="go") state=`<div class="mini-light go">¡YA!</div>`;
+  else state=M.early!=null?`<p style="margin:0">${n(M.early)} se ha adelantado.</p>`:`<p style="margin:0">${M.pressed.map(x=>`${n(x.i)} ${x.ms} ms`).join(" · ")}</p>`;
+  return `<div class="minibox"><span class="label">Minijuego de desempate</span>${state}<div class="bids" style="grid-template-columns:repeat(${M.who.length},1fr)">${btns}</div></div>`;
+}
+
+// ---------- Pantalla de subasta ----------
+// En online cada uno usa Q W E y R para su propio mánager
+const keysOf = i => NET.role==="local" ? KEYS[i] : KEYS[0];
+const skipKeyOf = i => NET.role==="local" ? SKIPKEYS[i] : SKIPKEYS[0];
+function callText(L){
+  const left=4-L.clues, faltan=`falta${left>1?"n":""} ${left} pista${left>1?"s":""}`;
+  if(L.leader<0) return left>0 ? `Pujad o pasad · ${faltan}` : `Sin pujas · se resuelve en ${IDLE_LIMIT-L.idle} s`;
+  if(L.cd<=2) return "¡A las dos…!";
+  if(L.cd<=5) return "A la una…";
+  return `Puja de ${S.names[L.leader]}`;
+}
+function tickUI(){
+  const L=S.lot, c=document.getElementById("call"), bar=document.getElementById("cd");
+  const live=L.leader>=0;
+  if(c){ c.textContent=callText(L); c.classList.toggle("hot",live&&L.cd<=2); }
+  if(bar) bar.style.width = (live ? L.cd/CD*100 : 0)+"%";
+}
+function teamsHTML(lead=-1){
+  return `<div class="teams">${S.m.map((m,i)=>`
+    <div class="team ${lead===i?"lead":""}" style="--c:${COLORS[i]}">
+      <div class="top"><span class="nm">${esc(S.names[i])}</span><span class="money">${m.budget} M</span></div>
+      <div class="slots">${Object.keys(SLOTS).map(k=>`<span class="slot ${count(m,k)>=SLOTS[k]?"full":""}">${k} ${count(m,k)}/${SLOTS[k]}</span>`).join("")}<span class="slot skips">Skips ${m.skips??0}/${SKIPS}</span></div>
+      <div class="roster">${m.roster.length?m.roster.map(x=>`<div><span class="ps">${x.pos}</span><span>${esc(x.n)} <span class="pr">· ${x.r}</span></span><span class="pr">${x.price} M</span></div>`).join(""):`<span class="note">Sin fichajes todavía</span>`}</div>
+    </div>`).join("")}</div>`;
+}
+function soldLabel(L){
+  const s=L.sold, nm=s.to>=0?esc(S.names[s.to]):"";
+  if(s.to<0) return "Todos han pasado · lote desierto";
+  if(s.via==="obligado") return `Nadie pujó y ${nm} no pasó: se lo queda por ${s.price} M`;
+  if(s.via==="minijuego") return `${nm} pierde el minijuego y se lo queda por ${s.price} M`;
+  return `Vendido a ${nm} por ${s.price} M`;
+}
+function renderAuction(fresh=false, newClue=false){
+  const L=S.lot, p=POOL[L.pi];
+  const left=S.deck.length-S.di-1;
+  const clueHTML=p.p.map((c,i)=>i<L.clues
+    ? `<li class="${(fresh&&i===0)||(newClue&&i===L.clues-1)?"new":""}">${esc(c)}</li>`
+    : `<li class="hidden">Pista oculta</li>`).join("");
+  const soldHTML=L.sold?`<div class="reveal">
+      <span class="label" style="color:#3c5a4b">${soldLabel(L)}</span>
+      <div class="who">${esc(p.n)}</div>
+      <div class="row"><span class="rating">${p.r}</span><span>de media</span></div>
+    </div>`:"";
+  const showMini=L.mini&&!L.sold;
+  if(showMini&&L.mini.phase==="go"&&miniKey!==S.di+"-"+S.sales){ miniKey=S.di+"-"+S.sales; miniT0=performance.now(); }
+  app.innerHTML=`
+  ${teamsHTML(L.leader)}
+  <section class="stage">
+    <article class="lot" aria-live="polite">
+      <div class="hd"><span class="pos">${POS_NAME[p.pos]}</span><span class="count">Lote ${S.di+1} · quedan ${left}</span></div>
+      <h2>${p.pos==="DT"?"¿Quién es este entrenador?":"¿Quién es este jugador?"}</h2>
+      <ol class="clues">${clueHTML}</ol>
+      ${soldHTML}
+    </article>
+    <aside class="auction">
+      ${showMini?miniHTML():`
+      <span class="label">${L.leader>=0?"Puja actual":"Precio de salida"}</span>
+      <div class="price">${L.leader>=0?L.bid:L.salida} M</div>
+      <div class="leader" style="color:${L.leader>=0?COLORS[L.leader]:"var(--muted)"}">${L.leader>=0?esc(S.names[L.leader]):"Sin pujas"}</div>
+      <div class="call ${L.leader>=0&&L.cd<=2&&!L.sold?"hot":""}" id="call">${L.sold?(L.sold.to>=0?"¡Vendido!":"Desierto"):callText(L)}</div>
+      <div class="cdbar"><i id="cd" style="width:${!L.sold&&L.leader>=0?L.cd/CD*100:0}%"></i></div>
+      <div class="row">
+        ${L.sold
+          ? `<button class="btn amber" id="next">Siguiente lote</button>`
+          : `<button class="btn amber sm" id="clue" ${L.clues>=4||paused?"disabled":""}>Siguiente pista · Espacio</button>
+             <button class="btn ghost sm" id="pause">${paused?"Reanudar":"Pausa"}</button>
+             <button class="btn ghost sm" id="hammer" ${L.leader<0?"disabled":""}>Adjudicar ya</button>`}
+      </div>
+      <div class="flash">${esc(L.msg)}</div>`}
+    </aside>
+  </section>
+  <section class="paddles">${S.m.map((m,i)=>`
+    <div class="paddle" style="--c:${COLORS[i]}${NET.role!=="local"&&mine(i)?";border-color:var(--c)":""}">
+      <span class="pn">${esc(S.names[i])}${NET.role!=="local"&&mine(i)?" · tú":""}</span>
+      <div class="bids">${INCS.map((inc,k)=>`<button class="bid" data-m="${i}" data-inc="${inc}" ${canRaise(i,inc)&&mine(i)?"":"disabled"}>${priceFor(inc)} M${mine(i)?`<kbd>${keysOf(i)[k].toUpperCase()}</kbd>`:""}</button>`).join("")}</div>
+      <button class="skipbtn" data-skip="${i}" ${canSkip(i)&&mine(i)?"":"disabled"}>Pasar (skip) · quedan ${m.skips??0} ${mine(i)?`<kbd>${skipKeyOf(i).toUpperCase()}</kbd>`:""}</button>
+      <span class="why">${L.sold?"":esc(why(i))}</span>
+    </div>`).join("")}</section>`;
+  // pointerdown: la pantalla se repinta a menudo y un click normal podría perderse
+  app.querySelectorAll(".bid[data-inc]").forEach(b=>b.addEventListener("pointerdown",e=>{e.preventDefault();A("bid",+b.dataset.m,+b.dataset.inc)}));
+  app.querySelectorAll("[data-skip]").forEach(b=>b.addEventListener("pointerdown",e=>{e.preventDefault();A("skip",+b.dataset.skip)}));
+  app.querySelectorAll("[data-mini]").forEach(b=>b.addEventListener("pointerdown",e=>{e.preventDefault();pressMini(+b.dataset.mini)}));
+  const $=id=>document.getElementById(id);
+  if($("next")){ $("next").onclick=()=>A("next"); $("next").focus(); }
+  if($("minigo")){ $("minigo").onclick=()=>A("minigo"); $("minigo").focus(); }
+  if($("pause")) $("pause").onclick=()=>A("pause");
+  if($("clue")) $("clue").onclick=()=>A("clue");
+  if($("hammer")) $("hammer").onclick=()=>A("hammer");
+}
+document.addEventListener("keydown",e=>{
+  if(!S||S.phase!=="auction"||e.target.tagName==="INPUT"||e.repeat) return;
+  const L=S.lot, k=e.key.toLowerCase();
+  if(L&&L.sold&&e.key==="Enter"){ e.preventDefault(); return A("next"); }
+  // qué mánager controla esta tecla: en local, por su fila; en online, siempre el tuyo
+  const owner = i => NET.role==="local" ? i : NET.seat;
+  const row = NET.role==="local" ? KEYS : [KEYS[0]], sk = NET.role==="local" ? SKIPKEYS : [SKIPKEYS[0]];
+  if(L&&L.mini&&!L.sold){
+    const r=row.findIndex((ks,i)=>ks.includes(k)||sk[i]===k);
+    if(r>=0&&owner(r)>=0){ e.preventDefault(); pressMini(owner(r)); }
+    return;
+  }
+  row.forEach((ks,r)=>{const j=ks.indexOf(k); if(j>=0&&owner(r)>=0) A("bid",owner(r),INCS[j]);});
+  const si=sk.indexOf(k); if(si>=0&&owner(si)>=0) A("skip",owner(si));
+  if(k===" "&&L&&!L.sold){e.preventDefault();A("clue");}
+});
+
+// ---------- Liga ----------
+function toLeague(){
+  stop();
+  S.m.forEach(m=>{ Object.keys(SLOTS).forEach(k=>{ while(count(m,k)<SLOTS[k]) m.roster.push({n:k==="DT"?"Segundo entrenador":"Canterano",pos:k,r:62,price:0}); }); });
+  const base=[[0,1],[2,0],[1,2],[1,0],[0,2],[2,1]];
+  const fixtures=[]; for(let l=0;l<S.laps/2;l++) base.forEach(f=>fixtures.push({h:f[0],a:f[1],res:null}));
+  S.phase="league"; S.fx=fixtures; S.played=0; S.tiebreak=null;
+  save(); renderLeague();
+}
+function power(i){
+  const R=S.m[i].roster, g=pos=>R.filter(x=>x.pos===pos).map(x=>x.r);
+  const dt=g("DT")[0], bonus=(dt-80)*0.15;
+  return {
+    att: 0.6*avg(g("DEL")) + 0.4*avg(g("MED")) + bonus,
+    def: 0.4*g("POR")[0] + 0.45*avg(g("DEF")) + 0.15*avg(g("MED")) + bonus,
+    ovr: avg(R.map(x=>x.r))
+  };
+}
+function poisson(l){ let L=Math.exp(-l),k=0,p=1; do{k++;p*=Math.random();}while(p>L); return k-1; }
+function scorer(i){
+  const W={DEL:5,MED:2.4,DEF:0.8,POR:0,DT:0};
+  const pool=S.m[i].roster.filter(x=>W[x.pos]>0).map(x=>({n:x.n,w:W[x.pos]*Math.pow(x.r/80,3)}));
+  let t=pool.reduce((s,x)=>s+x.w,0)*Math.random();
+  for(const x of pool){ if((t-=x.w)<=0) return x.n; } return pool[0].n;
+}
+function lambdas(h,a,neutral){
+  const H=power(h), A=power(a);
+  return [Math.min(4,Math.max(.2,1.3*Math.exp((H.att-A.def)/7)+(neutral?0:.2))),
+          Math.min(4,Math.max(.2,1.3*Math.exp((A.att-H.def)/7)))];
+}
+const goals=(t,lam,from,to)=>Array.from({length:poisson(lam)},()=>({m:from+Math.floor(Math.random()*(to-from+1)),n:scorer(t)}));
+const byMin=(a,b)=>a.m-b.m;
+function playMatch(f){
+  const [lh,la]=lambdas(f.h,f.a,false);
+  const sh=goals(f.h,lh,1,90).sort(byMin), sa=goals(f.a,la,1,90).sort(byMin);
+  f.res={gh:sh.length,ga:sa.length,sh,sa};
+}
+// Desempate: partido en campo neutral, prórroga y penaltis si hace falta
+function shootout(h,a){
+  const gk=i=>S.m[i].roster.find(x=>x.pos==="POR").r;
+  const pH=Math.min(.9,Math.max(.6,.76-(gk(a)-80)*.006)), pA=Math.min(.9,Math.max(.6,.76-(gk(h)-80)*.006));
+  const H=[],A=[],sum=x=>x.filter(Boolean).length;
+  const decided=()=>sum(H)>sum(A)+(5-A.length)||sum(A)>sum(H)+(5-H.length);
+  for(let r=0;r<5;r++){ H.push(Math.random()<pH); if(decided())break; A.push(Math.random()<pA); if(decided())break; }
+  if(!decided()) do{ H.push(Math.random()<pH); A.push(Math.random()<pA); }while(sum(H)===sum(A));
+  return {H,A,winner:sum(H)>sum(A)?h:a};
+}
+function playPlayoff(){
+  const P=S.playoff, [lh,la]=lambdas(P.h,P.a,true);
+  let sh=goals(P.h,lh,1,90), sa=goals(P.a,la,1,90), et=false, pens=null;
+  if(sh.length===sa.length){ et=true; sh=sh.concat(goals(P.h,lh/3,91,120)); sa=sa.concat(goals(P.a,la/3,91,120)); }
+  if(sh.length===sa.length) pens=shootout(P.h,P.a);
+  sh.sort(byMin); sa.sort(byMin);
+  P.res={gh:sh.length,ga:sa.length,sh,sa,et,pens};
+  P.winner=sh.length>sa.length?P.h:sa.length>sh.length?P.a:pens.winner;
+  save(); renderLeague();
+}
+function playoffHTML(){
+  const P=S.playoff, n=i=>esc(S.names[i]);
+  const intro=`Empate a ${standings()[0].pts} puntos entre ${n(P.h)} y ${n(P.a)}.${P.third!=null?` ${n(P.third)} también empata, pero queda fuera por diferencia de goles.`:""} El título se decide en un partido a vida o muerte.`;
+  if(!P.res) return `<section class="box" style="border-color:var(--amber)"><span class="label">Partido de desempate</span><h2 style="font-size:2.2rem">${n(P.h)} <span style="color:var(--muted)">vs</span> ${n(P.a)}</h2><p style="margin:0;color:var(--muted)">${intro}</p><div class="row"><button class="btn amber" id="po">Jugar el desempate</button></div></section>`;
+  const r=P.res, dots=a=>a.map(x=>`<span style="color:${x?"var(--ok)":"var(--bad)"}">${x?"●":"✕"}</span>`).join(" ");
+  return `<section class="box" style="border-color:var(--amber)"><span class="label">Partido de desempate${r.et?" · con prórroga":""}${r.pens?" · penaltis":""}</span>
+    <div class="match" style="border:0"><span class="tn h" style="color:${COLORS[P.h]}">${n(P.h)}</span><span class="sc mono">${r.gh} – ${r.ga}</span><span class="tn" style="color:${COLORS[P.a]}">${n(P.a)}</span>
+    <div class="gl"><div>${r.sh.map(g=>`${esc(g.n)} ${g.m}'`).join("<br>")}</div><div>${r.sa.map(g=>`${g.m}' ${esc(g.n)}`).join("<br>")}</div></div></div>
+    ${r.pens?`<div class="gl" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-family:var(--f-mono)"><div style="text-align:right">${dots(r.pens.H)} · ${r.pens.H.filter(Boolean).length}</div><div>${r.pens.A.filter(Boolean).length} · ${dots(r.pens.A)}</div></div>`:""}
+  </section>`;
+}
+function playNext(){
+  if(S.played>=S.fx.length) return;
+  playMatch(S.fx[S.played]); S.played++;
+  if(S.played===S.fx.length) S.phase="final";
+  save(); renderLeague();
+}
+function playAll(){ while(S.played<S.fx.length){ playMatch(S.fx[S.played]); S.played++; } S.phase="final"; save(); renderLeague(); }
+function standings(){
+  const T=S.m.map((_,i)=>({i,pj:0,g:0,e:0,p:0,gf:0,gc:0,pts:0}));
+  S.fx.filter(f=>f.res).forEach(f=>{
+    const h=T[f.h],a=T[f.a],{gh,ga}=f.res;
+    h.pj++;a.pj++;h.gf+=gh;h.gc+=ga;a.gf+=ga;a.gc+=gh;
+    if(gh>ga){h.g++;h.pts+=3;a.p++;} else if(gh<ga){a.g++;a.pts+=3;h.p++;} else {h.e++;a.e++;h.pts++;a.pts++;}
+  });
+  return T.sort((x,y)=>y.pts-x.pts||(y.gf-y.gc)-(x.gf-x.gc)||y.gf-x.gf);
+}
+function scorers(){
+  const c={}; S.fx.filter(f=>f.res).forEach(f=>{
+    f.res.sh.forEach(g=>{const k=g.n+"|"+f.h;c[k]=(c[k]||0)+1});
+    f.res.sa.forEach(g=>{const k=g.n+"|"+f.a;c[k]=(c[k]||0)+1});
+  });
+  return Object.entries(c).map(([k,v])=>{const[n,t]=k.split("|");return{n,t:+t,g:v}}).sort((a,b)=>b.g-a.g).slice(0,6);
+}
+function renderLeague(){
+  const T=standings(), done=S.played>=S.fx.length;
+  let champ=null;
+  if(done){
+    const lead=T.filter(t=>t.pts===T[0].pts);
+    if(lead.length===1) champ={i:T[0].i};
+    else {
+      if(!S.playoff){ S.playoff={h:lead[0].i,a:lead[1].i,third:lead[2]?lead[2].i:null,res:null}; save(); }
+      if(S.playoff.res) champ={i:S.playoff.winner,po:true};
+    }
+  }
+  const rest=f=>[0,1,2].find(x=>x!==f.h&&x!==f.a);
+  const fxHTML=S.fx.map((f,k)=>{
+    const head=`<div class="jor">Jornada ${k+1} · descansa ${esc(S.names[rest(f)])}</div>`;
+    const sc=f.res?`${f.res.gh} – ${f.res.ga}`:"vs";
+    const gl=f.res?`<div class="gl"><div>${f.res.sh.map(g=>`${esc(g.n)} ${g.m}'`).join("<br>")}</div><div>${f.res.sa.map(g=>`${g.m}' ${esc(g.n)}`).join("<br>")}</div></div>`:"";
+    return `${head}<div class="match"><span class="tn h" style="color:${COLORS[f.h]}">${esc(S.names[f.h])}</span><span class="sc mono">${sc}</span><span class="tn" style="color:${COLORS[f.a]}">${esc(S.names[f.a])}</span>${gl}</div>`;
+  }).join("");
+  const top=scorers();
+  app.innerHTML=`
+  ${champ?`<section class="champ" style="--c:${COLORS[champ.i]}"><span class="label">Campeón de liga${champ.po?" · tras el partido de desempate":""}</span><h1>${esc(S.names[champ.i])}</h1><span class="note">Entrenador: ${esc(S.m[champ.i].roster.find(x=>x.pos==="DT").n)}</span></section>`
+         :`<header class="hero"><span class="label">Subasta cerrada · ${S.sales} fichajes</span><h1>La <span>Liga</span></h1></header>`}
+  ${S.playoff?playoffHTML():""}
+  <section class="xi">${S.m.map((m,i)=>{const P=power(i);const order=["POR","DEF","MED","DEL","DT"];
+    return `<div class="team" style="--c:${COLORS[i]}">
+      <div class="top"><span class="nm">${esc(S.names[i])}</span><span class="money">${m.budget} M</span></div>
+      <div class="strength"><span>Media <b>${P.ovr.toFixed(1)}</b></span><span>Ataque <b>${P.att.toFixed(1)}</b></span><span>Defensa <b>${P.def.toFixed(1)}</b></span></div>
+      <div class="roster">${[...m.roster].sort((a,b)=>order.indexOf(a.pos)-order.indexOf(b.pos)).map(x=>`<div><span class="ps">${x.pos}</span><span>${esc(x.n)}</span><span class="pr">${x.r}</span></div>`).join("")}</div>
+    </div>`}).join("")}</section>
+  <section class="league">
+    <div class="box">
+      <div class="row" style="justify-content:space-between"><span class="label">Calendario</span>
+        <div class="row">${done?`<button class="btn amber sm" id="again">${NET.role==="client"?"Salir":"Nueva subasta"}</button><button class="btn ghost sm" id="replay">Repetir liga</button>`
+          :`<button class="btn amber sm" id="play">Jugar jornada ${S.played+1}</button><button class="btn ghost sm" id="all">Simular todo</button>`}</div></div>
+      ${fxHTML}
+    </div>
+    <div style="display:flex;flex-direction:column;gap:16px;min-width:0">
+      <div class="box"><span class="label">Clasificación</span>
+        <div class="tablewrap"><table><thead><tr><th>#</th><th>Equipo</th><th>PJ</th><th>G</th><th>E</th><th>P</th><th>GF</th><th>GC</th><th>DG</th><th>Pts</th></tr></thead><tbody>
+        ${T.map((t,k)=>`<tr><td class="mono">${k+1}</td><td class="tm" style="color:${COLORS[t.i]}">${esc(S.names[t.i])}</td><td>${t.pj}</td><td>${t.g}</td><td>${t.e}</td><td>${t.p}</td><td>${t.gf}</td><td>${t.gc}</td><td>${t.gf-t.gc>0?"+":""}${t.gf-t.gc}</td><td class="pts">${t.pts}</td></tr>`).join("")}
+        </tbody></table></div></div>
+      <div class="box"><span class="label">Pichichi</span>
+        ${top.length?`<div class="roster" style="max-height:none">${top.map(s=>`<div><span class="ps mono">${s.g}</span><span>${esc(s.n)}</span><span class="pr" style="color:${COLORS[s.t]}">${esc(S.names[s.t])}</span></div>`).join("")}</div>`:`<span class="note">Aún no se ha marcado ningún gol.</span>`}
+      </div>
+      <p class="note">Los partidos se simulan con la media de cada línea. El entrenador suma a ataque y defensa. Hay suerte, como en el fútbol.</p>
+    </div>
+  </section>`;
+  const $=id=>document.getElementById(id);
+  if($("play")) $("play").onclick=()=>A("play");
+  if($("all")) $("all").onclick=()=>A("all");
+  if($("po")) $("po").onclick=()=>A("po");
+  if($("replay")) $("replay").onclick=()=>A("replay");
+  if($("again")) $("again").onclick=()=>{
+    if(NET.role==="client") return leaveOnline();
+    try{localStorage.removeItem("subasta-v3")}catch(e){} saved=null;
+    if(NET.role==="host"){ S={phase:"lobby",code:S.code,seats:S.seats,names:S.seats.map(s=>s.name),laps:S.laps}; save(); return renderLobby(); }
+    S=null; renderSetup();
+  };
+}
+function replayLeague(){ S.fx.forEach(f=>f.res=null); S.played=0; S.playoff=null; S.phase="league"; save(); renderLeague(); }
+
+function route(){
+  if(!S) return renderSetup();
+  netbar();
+  if(S.phase==="lobby") return renderLobby();
+  if(S.phase==="auction"){
+    const M=S.lot.mini; if(M&&!S.lot.sold){ M.phase="ready"; M.pressed=[]; M.early=null; }
+    renderAuction(true); if(!S.lot.sold) run();
+  }
+  else renderLeague();
+}
+renderSetup();
+</script>
+</body>
+</html>
