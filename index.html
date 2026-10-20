@@ -113,6 +113,36 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 .namestep{display:flex;flex-direction:column;gap:8px;border-top:1px solid var(--line);padding-top:14px}
 .namestep input{flex:1 1 200px;min-width:0;background:var(--pitch);border:1.5px solid var(--line);border-left:5px solid var(--amber);border-radius:6px;color:var(--chalk);padding:11px 12px;font:inherit;font-size:1.05rem}
 .online-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:12px}
+/* eventos y feedback */
+.event{display:flex;flex-direction:column;gap:3px;background:#0f2219;color:var(--chalk);border-radius:8px;padding:12px 14px;border-left:5px solid var(--amber)}
+.event b{font-family:var(--f-display);font-size:1.35rem;text-transform:uppercase;letter-spacing:.03em;color:var(--amber)}
+.event .label{color:var(--muted)}
+.event.troll{border-left-color:var(--m2)}
+.event.troll b{color:var(--m2)}
+.lot .event{margin-top:-4px}
+.event-in{animation:evin .5s cubic-bezier(.2,1.4,.4,1) both}
+.event-in.troll{animation:evin .5s cubic-bezier(.2,1.4,.4,1) both, shake .5s .5s both}
+@keyframes evin{from{opacity:0;transform:translateY(-10px) scale(.96)}to{opacity:1;transform:none}}
+@keyframes shake{0%,100%{transform:none}20%{transform:translateX(-6px) rotate(-1deg)}40%{transform:translateX(6px) rotate(1deg)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
+.bump{animation:bump .35s ease-out}
+@keyframes bump{0%{transform:scale(1)}40%{transform:scale(1.18);color:var(--chalk)}100%{transform:scale(1)}}
+.pulse{animation:pulse .7s ease-out}
+@keyframes pulse{0%{box-shadow:0 0 0 0 var(--c,var(--amber))}100%{box-shadow:0 0 0 14px transparent}}
+.stamp{position:absolute;bottom:22px;right:18px;font-family:var(--f-display);font-weight:900;font-size:clamp(1.6rem,4vw,2.4rem);text-transform:uppercase;color:#c2410c;border:4px solid #c2410c;border-radius:8px;padding:2px 12px;transform:rotate(-12deg);opacity:.9;pointer-events:none}
+.stamp.desierto{color:#5b6b63;border-color:#5b6b63}
+.stamp-in{animation:stamp .45s cubic-bezier(.3,1.6,.5,1) both}
+@keyframes stamp{from{opacity:0;transform:rotate(-12deg) scale(2.4)}to{opacity:.9;transform:rotate(-12deg) scale(1)}}
+.flash-go{animation:flashgo .4s ease-out}
+@keyframes flashgo{from{filter:brightness(1.8)}to{filter:none}}
+.cdbar.hot i{background:var(--bad)}
+.peek{display:inline-flex;gap:8px;align-items:center;font-weight:600;color:#3c5a4b}
+.levlist{display:flex;flex-direction:column;gap:6px;margin:6px 0}
+.levlist .event{padding:8px 12px}
+.levlist .event b{font-size:1.05rem}
+.mute{position:fixed;z-index:20;bottom:calc(12px + env(safe-area-inset-bottom,0px));right:calc(12px + env(safe-area-inset-right,0px));background:var(--panel-2);color:var(--chalk);border:1px solid var(--line);border-radius:999px;padding:8px 14px;font-weight:600;font-size:.85rem}
+.mute:hover{border-color:var(--chalk)}
+.confetti{position:fixed;inset:0;pointer-events:none;z-index:30}
+@media (prefers-reduced-motion:reduce){.event-in,.event-in.troll,.bump,.pulse,.stamp-in,.flash-go{animation:none}}
 .slot.skips{border-color:var(--amber);color:var(--amber)}
 .skipbtn{border:1.5px dashed var(--line);background:transparent;color:var(--chalk);border-radius:6px;padding:8px;font-weight:600;font-size:.85rem;display:flex;justify-content:center;gap:8px;align-items:center;touch-action:manipulation}
 .skipbtn:hover:not(:disabled){border-color:var(--chalk)}
@@ -158,6 +188,7 @@ td.pts{font-family:var(--f-mono);font-weight:700;color:var(--amber);font-size:1.
 
 <div class="wrap" style="padding-block:12px 0"><div class="netbar" id="netbar" hidden></div></div>
 <div class="wrap" id="app"></div>
+<button class="mute" id="mute" type="button" aria-pressed="true">Sonido: sí</button>
 
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <script>
@@ -355,7 +386,7 @@ const resPack = r => r && {...r, sh:r.sh.map(gpack), sa:r.sa.map(gpack)};
 const resUnpack = r => r && {...r, sh:r.sh.map(gunpack), sa:r.sa.map(gunpack)};
 function pack(){
   const o={...S, deck:undefined, dl:S.deck?S.deck.length:0, pz:paused, seq:NET.seq};
-  if(S.m) o.m=S.m.map(m=>({b:m.budget,s:m.skips,r:m.roster.map(x=>[pidx(x),x.price])}));
+  if(S.m) o.m=S.m.map(m=>({b:m.budget,s:m.skips,r:m.roster.map(x=>[pidx(x),x.price,x.r])}));
   if(S.fx) o.fx=S.fx.map(f=>({h:f.h,a:f.a,j:f.j,res:resPack(f.res)}));
   if(S.playoff) o.playoff={...S.playoff,res:resPack(S.playoff.res)};
   // los mensajes de la sala tienen un límite de 4 KB: si no cabe, se quitan los goleadores
@@ -365,7 +396,7 @@ function pack(){
 function unpack(o){
   const s={...o};
   s.deck=new Array(o.dl||0); paused=!!o.pz;
-  if(o.m) s.m=o.m.map(m=>({budget:m.b,skips:m.s,roster:m.r.map(([i,p])=>fromIdx(i,p))}));
+  if(o.m) s.m=o.m.map(m=>({budget:m.b,skips:m.s,roster:m.r.map(([i,p,r])=>{ const x=fromIdx(i,p); if(r!=null) x.r=r; return x; })}));
   if(o.fx) s.fx=o.fx.map(f=>({h:f.h,a:f.a,j:f.j,res:resUnpack(f.res)}));
   if(o.playoff) s.playoff={...o.playoff,res:resUnpack(o.playoff.res)};
   return s;
@@ -545,6 +576,7 @@ function renderSetup(){
         <li>La calidad real (media) solo se descubre al venderse. Si todos pasan, el lote queda desierto.</li>
         <li>Ojo: no todos son cracks. Hay fichajes fallidos y auténticos timos con historias de equipo grande. La pista te puede engañar.</li>
         <li>Los huecos que queden vacíos al final se rellenan con canteranos de media 62.</li>
+        <li>De vez en cuando salta un <b>evento aleatorio</b>: millones extra, pistas filtradas, lotes relámpago, lesiones jugando al pádel, cromos cambiados a la fuerza… y alguno que no sirve para nada.</li>
         <li>Si dos equipos acaban empatados a puntos, el título se decide en un <b>partido de desempate</b> con prórroga y penaltis.</li>
       </ul>
       <button class="btn amber" id="start">Empezar subasta</button>
@@ -612,6 +644,7 @@ function nextLot(){
   const reach=Math.max(...S.m.filter(m=>needs(m,pos)>0).map(maxBid));
   const salida=Math.max(1,Math.min(reach, 2+Math.floor(Math.random()*14)));
   S.lot = {pi:S.deck[S.di], salida, clues:1, bid:0, leader:-1, cd:0, idle:0, skipped:S.m.map(()=>false), sold:null, mini:null, msg:""};
+  if(S.sales>=2) S.lot.ev=rollEvent(EVENTS,EV_CHANCE);
   S.phase = "auction"; paused = false;
   save(); renderAuction(true); run();
 }
@@ -637,9 +670,10 @@ function bid(mi,inc){
   const L=S.lot; if(!L || L.sold || L.mini || S.phase!=="auction") return;
   if(L.leader===mi){ L.msg=`${S.names[mi]} ya va ganando la puja.`; return renderAuction(); }
   if(!canRaise(mi,inc)){ L.msg=`${S.names[mi]} no puede pujar ${priceFor(inc)} M. ${why(mi)}.`; return renderAuction(); }
-  L.bid=priceFor(inc); L.leader=mi; L.cd=CD; L.idle=0; L.msg="";
+  L.bid=priceFor(inc); L.leader=mi; L.cd=cdMax(L); L.idle=0; L.msg="";
   save(); renderAuction();
 }
+const cdMax = L => L.fast ? 4 : CD;
 function skip(mi){
   const L=S.lot; if(!L || L.sold || L.mini || S.phase!=="auction") return;
   if(!canSkip(mi)){
@@ -658,7 +692,7 @@ function assign(mi,price,via){
 }
 function sell(){
   const L=S.lot;
-  if(L.leader>=0) return assign(L.leader,L.bid,"puja");
+  if(L.leader>=0) return assign(L.leader,Math.min(L.bid+(L.tax||0),Math.max(L.bid,maxBid(S.m[L.leader]))),"puja");
   resolveNoBid();
 }
 function resolveNoBid(){
@@ -676,13 +710,14 @@ function run(){
     const L=S&&S.lot; if(!L||L.sold||L.mini||paused||S.phase!=="auction") return;
     // con una puja en marcha la cuenta atrás corre aunque falten pistas
     if(L.leader>=0){ L.cd--; if(L.cd<=0) return sell(); }
-    else if(L.clues>=4){ L.idle++; if(L.idle>=IDLE_LIMIT) return resolveNoBid(); }
+    else if(L.clues>=4||L.blind){ L.idle++; if(L.idle>=IDLE_LIMIT) return resolveNoBid(); }
     else return;
     tickUI(); broadcast();
   },1000);
 }
 function revealClue(){
   const L=S&&S.lot; if(!L||L.sold||L.mini||paused||L.clues>=4) return;
+  if(L.blind){ L.msg="Subasta a ciegas: no hay más pistas para este jugador."; return renderAuction(); }
   L.clues++;
   if(L.clues===4) L.idle=0;
   save(); renderAuction(false,true);
@@ -732,7 +767,7 @@ function miniHTML(){
     <p style="margin:0;color:var(--muted)"><b>Reflejos:</b> cuando salga <b>¡YA!</b>, pulsa cualquiera de tus teclas o tu botón. El último en pulsar, o el que se adelante, se lo queda.</p>
     <button class="btn amber" id="minigo">Empezar minijuego</button>`;
   else if(M.phase==="wait") state=`<div class="mini-light wait">Espera…</div>`;
-  else if(M.phase==="go") state=`<div class="mini-light go">¡YA!</div>`;
+  else if(M.phase==="go") state=`<div class="mini-light go" id="minilight">¡YA!</div>`;
   else state=M.early!=null?`<p style="margin:0">${n(M.early)} se ha adelantado.</p>`:`<p style="margin:0">${M.pressed.map(x=>`${n(x.i)} ${x.ms} ms`).join(" · ")}</p>`;
   return `<div class="minibox"><span class="label">Minijuego de desempate</span>${state}<div class="bids" style="grid-template-columns:repeat(${M.who.length},1fr)">${btns}</div></div>`;
 }
@@ -743,7 +778,7 @@ const keysOf = i => NET.role==="local" ? KEYS[i] : KEYS[0];
 const skipKeyOf = i => NET.role==="local" ? SKIPKEYS[i] : SKIPKEYS[0];
 function callText(L){
   const left=4-L.clues, faltan=`falta${left>1?"n":""} ${left} pista${left>1?"s":""}`;
-  if(L.leader<0) return left>0 ? `Pujad o pasad · ${faltan}` : `Sin pujas · se resuelve en ${IDLE_LIMIT-L.idle} s`;
+  if(L.leader<0) return left>0&&!L.blind ? `Pujad o pasad · ${faltan}` : `Sin pujas · se resuelve en ${IDLE_LIMIT-L.idle} s`;
   if(L.cd<=2) return "¡A las dos…!";
   if(L.cd<=5) return "A la una…";
   return `Puja de ${S.names[L.leader]}`;
@@ -752,11 +787,12 @@ function tickUI(){
   const L=S.lot, c=document.getElementById("call"), bar=document.getElementById("cd");
   const live=L.leader>=0;
   if(c){ c.textContent=callText(L); c.classList.toggle("hot",live&&L.cd<=2); }
-  if(bar) bar.style.width = (live ? L.cd/CD*100 : 0)+"%";
+  if(bar){ bar.style.width = (live ? L.cd/cdMax(L)*100 : 0)+"%"; bar.parentNode.classList.toggle("hot",live&&L.cd<=3); }
+  react();
 }
 function teamsHTML(lead=-1){
   return `<div class="teams">${S.m.map((m,i)=>`
-    <div class="team ${lead===i?"lead":""}" style="--c:${COLORS[i]}">
+    <div class="team ${lead===i?"lead":""}" id="team${i}" style="--c:${COLORS[i]}">
       <div class="top"><span class="nm">${esc(S.names[i])}</span><span class="money">${m.budget} M</span></div>
       <div class="slots">${Object.keys(SLOTS).map(k=>`<span class="slot ${count(m,k)>=SLOTS[k]?"full":""}">${k} ${count(m,k)}/${SLOTS[k]}</span>`).join("")}<span class="slot skips">Skips ${m.skips??0}/${SKIPS}</span></div>
       <div class="roster">${m.roster.length?m.roster.map(x=>`<div><span class="ps">${x.pos}</span><span>${esc(x.n)} <span class="pr">· ${x.r}</span></span><span class="pr">${x.price} M</span></div>`).join(""):`<span class="note">Sin fichajes todavía</span>`}</div>
@@ -780,28 +816,36 @@ function renderAuction(fresh=false, newClue=false){
       <div class="who">${esc(p.n)}</div>
       <div class="row"><span class="rating">${p.r}</span><span>de media</span></div>
     </div>`:"";
+  const stampHTML=L.sold?`<div class="stamp ${L.sold.to<0?"desierto":""}" id="stamp">${L.sold.to<0?"Desierto":"Vendido"}</div>`:"";
+  const evBox=L.ev?evHTML(L.ev,EVENTS,"evbanner"):"";
+  const peekHTML=L.peek&&!L.sold?`<div class="peek"><span class="rating">${p.r}</span> media filtrada por el ojeador</div>`:"";
+  const extras=[L.fast&&"Lote relámpago: 4 s entre pujas", L.tax&&"Comisión: +5 M para quien gane la puja", L.blind&&"Sin más pistas"].filter(Boolean);
   const showMini=L.mini&&!L.sold;
   if(showMini&&L.mini.phase==="go"&&miniKey!==S.di+"-"+S.sales){ miniKey=S.di+"-"+S.sales; miniT0=performance.now(); }
   app.innerHTML=`
   ${teamsHTML(L.leader)}
   <section class="stage">
     <article class="lot" aria-live="polite">
+      ${stampHTML}
+      ${evBox}
       <div class="hd"><span class="pos">${POS_NAME[p.pos]}</span><span class="count">Lote ${S.di+1} · quedan ${left}</span></div>
       <h2>${p.pos==="DT"?"¿Quién es este entrenador?":"¿Quién es este jugador?"}</h2>
       <ol class="clues">${clueHTML}</ol>
+      ${peekHTML}
       ${soldHTML}
     </article>
     <aside class="auction">
       ${showMini?miniHTML():`
       <span class="label">${L.leader>=0?"Puja actual":"Precio de salida"}</span>
-      <div class="price">${L.leader>=0?L.bid:L.salida} M</div>
+      <div class="price" id="price">${L.leader>=0?L.bid:L.salida} M</div>
       <div class="leader" style="color:${L.leader>=0?COLORS[L.leader]:"var(--muted)"}">${L.leader>=0?esc(S.names[L.leader]):"Sin pujas"}</div>
       <div class="call ${L.leader>=0&&L.cd<=2&&!L.sold?"hot":""}" id="call">${L.sold?(L.sold.to>=0?"¡Vendido!":"Desierto"):callText(L)}</div>
-      <div class="cdbar"><i id="cd" style="width:${!L.sold&&L.leader>=0?L.cd/CD*100:0}%"></i></div>
+      <div class="cdbar ${!L.sold&&L.leader>=0&&L.cd<=3?"hot":""}"><i id="cd" style="width:${!L.sold&&L.leader>=0?L.cd/cdMax(L)*100:0}%"></i></div>
+      ${extras.length&&!L.sold?`<span class="note">${extras.join(" · ")}</span>`:""}
       <div class="row">
         ${L.sold
           ? `<button class="btn amber" id="next">Siguiente lote</button>`
-          : `<button class="btn amber sm" id="clue" ${L.clues>=4||paused?"disabled":""}>Siguiente pista · Espacio</button>
+          : `<button class="btn amber sm" id="clue" ${L.clues>=4||paused||L.blind?"disabled":""}>Siguiente pista · Espacio</button>
              <button class="btn ghost sm" id="pause">${paused?"Reanudar":"Pausa"}</button>`}
       </div>
       <div class="flash">${esc(L.msg)}</div>`}
@@ -822,6 +866,7 @@ function renderAuction(fresh=false, newClue=false){
   if($("next")){ $("next").onclick=()=>A("next"); $("next").focus(); }
   if($("minigo")){ $("minigo").onclick=()=>A("minigo"); $("minigo").focus(); }
   if($("pause")) $("pause").onclick=()=>A("pause");
+  react();
   if($("clue")) $("clue").onclick=()=>A("clue");
 }
 document.addEventListener("keydown",e=>{
@@ -923,14 +968,18 @@ function playoffHTML(){
     ${r.pens?`<div class="gl" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-family:var(--f-mono)"><div style="text-align:right">${dots(r.pens.H)} · ${r.pens.H.filter(Boolean).length}</div><div>${r.pens.A.filter(Boolean).length} · ${dots(r.pens.A)}</div></div>`:""}
   </section>`;
 }
+function playJornada(){
+  const j=S.fx[S.played].j;
+  const ev=rollEvent(LEVENTS,LEV_CHANCE); if(ev){ S.lev=S.lev||[]; S.lev.push({j,...ev}); }
+  while(S.played<S.fx.length && S.fx[S.played].j===j){ playMatch(S.fx[S.played]); S.played++; }
+}
 function playNext(){
   if(S.played>=S.fx.length) return;
-  const j=S.fx[S.played].j;
-  while(S.played<S.fx.length && S.fx[S.played].j===j){ playMatch(S.fx[S.played]); S.played++; }
+  playJornada();
   if(S.played===S.fx.length) S.phase="final";
   save(); renderLeague();
 }
-function playAll(){ while(S.played<S.fx.length){ playMatch(S.fx[S.played]); S.played++; } S.phase="final"; save(); renderLeague(); }
+function playAll(){ while(S.played<S.fx.length) playJornada(); S.phase="final"; save(); renderLeague(); }
 function standings(){
   const T=S.m.map((_,i)=>({i,pj:0,g:0,e:0,p:0,gf:0,gc:0,pts:0}));
   S.fx.filter(f=>f.res).forEach(f=>{
@@ -962,14 +1011,15 @@ function renderLeague(){
     const first=k===0||S.fx[k-1].j!==f.j;
     const busy=new Set(S.fx.filter(x=>x.j===f.j).flatMap(x=>[x.h,x.a]));
     const rest=idx().filter(x=>!busy.has(x));
-    const head=first?`<div class="jor">Jornada ${f.j}${rest.length?` · descansa ${rest.map(x=>esc(S.names[x])).join(", ")}`:""}</div>`:"";
+    const evs=first?(S.lev||[]).filter(e=>e.j===f.j):[];
+    const head=first?`<div class="jor">Jornada ${f.j}${rest.length?` · descansa ${rest.map(x=>esc(S.names[x])).join(", ")}`:""}</div>${evs.length?`<div class="levlist">${evs.map(e=>evHTML(e,LEVENTS)).join("")}</div>`:""}`:"";
     const sc=f.res?`${f.res.gh} – ${f.res.ga}`:"vs";
     const gl=f.res?`<div class="gl"><div>${f.res.sh.map(g=>`${esc(g.n)} ${g.m}'`).join("<br>")}</div><div>${f.res.sa.map(g=>`${g.m}' ${esc(g.n)}`).join("<br>")}</div></div>`:"";
-    return `${head}<div class="match"><span class="tn h" style="color:${COLORS[f.h]}">${esc(S.names[f.h])}</span><span class="sc mono">${sc}</span><span class="tn" style="color:${COLORS[f.a]}">${esc(S.names[f.a])}</span>${gl}</div>`;
+    return `${head}<div class="match" id="m${k}"><span class="tn h" style="color:${COLORS[f.h]}">${esc(S.names[f.h])}</span><span class="sc mono">${sc}</span><span class="tn" style="color:${COLORS[f.a]}">${esc(S.names[f.a])}</span>${gl}</div>`;
   }).join("");
   const top=scorers();
   app.innerHTML=`
-  ${champ?`<section class="champ" style="--c:${COLORS[champ.i]}"><span class="label">Campeón de liga${champ.po?" · tras el partido de desempate":""}</span><h1>${esc(S.names[champ.i])}</h1><span class="note">Entrenador: ${esc(S.m[champ.i].roster.find(x=>x.pos==="DT").n)}</span></section>`
+  ${champ?`<section class="champ" id="champ" style="--c:${COLORS[champ.i]}"><span class="label">Campeón de liga${champ.po?" · tras el partido de desempate":""}</span><h1>${esc(S.names[champ.i])}</h1><span class="note">Entrenador: ${esc(S.m[champ.i].roster.find(x=>x.pos==="DT").n)}</span></section>`
          :`<header class="hero"><span class="label">Subasta cerrada · ${S.sales} fichajes</span><h1>La <span>Liga</span></h1></header>`}
   ${S.playoff?playoffHTML():""}
   <section class="xi">${S.m.map((m,i)=>{const P=power(i);const order=["POR","DEF","MED","DEL","DT"];
@@ -1007,8 +1057,177 @@ function renderLeague(){
     if(NET.role==="host"){ S={phase:"lobby",code:S.code,seats:S.seats,names:S.seats.map(s=>s.name),laps:S.laps}; save(); return renderLobby(); }
     S=null; renderSetup();
   };
+  react();
 }
-function replayLeague(){ S.fx.forEach(f=>f.res=null); S.played=0; S.playoff=null; S.phase="league"; save(); renderLeague(); }
+function replayLeague(){ S.fx.forEach(f=>f.res=null); S.played=0; S.playoff=null; S.lev=[]; S.phase="league"; save(); renderLeague(); }
+
+// ---------- Eventos aleatorios ----------
+// Se guardan como datos pequeños {k, t, t2, p, q, v} y el texto se genera al pintar
+const EV_CHANCE = 0.3, LEV_CHANCE = 0.4;
+const pickR = a => a[Math.floor(Math.random()*a.length)];
+const nm = i => esc(S.names[i]||"?");
+const EVENTS = {
+  lluvia:   {troll:false, title:"Lluvia de millones", text:()=>"La tele paga los derechos. Todos los mánagers reciben +10 M.",
+             apply(){ S.m.forEach(m=>m.budget+=10); return {}; }},
+  patrocinio:{troll:false, title:"Patrocinador dudoso", text:e=>`${nm(e.t)} firma con una casa de apuestas de Malta: +20 M.`,
+             apply(){ const t=pickR(idx()); S.m[t].budget+=20; return {t}; }},
+  hacienda: {troll:true, title:"Hacienda llama a la puerta", text:e=>`Inspección en las cuentas de ${nm(e.t)}: pierde ${e.v} M.`,
+             apply(){ const c=idx().filter(i=>S.m[i].budget-free(S.m[i])>=1); if(!c.length) return null; const t=pickR(c); const v=Math.min(15,S.m[t].budget-free(S.m[t])); S.m[t].budget-=v; return {t,v}; }},
+  relampago:{troll:false, title:"Lote relámpago", text:()=>"En este lote solo hay 4 segundos entre puja y puja.",
+             apply(){ S.lot.fast=true; return {}; }},
+  ciegas:   {troll:true, title:"Subasta a ciegas", text:()=>"El ojeador se ha dormido: este jugador no tiene más pistas.",
+             apply(){ S.lot.blind=true; return {}; }},
+  filtracion:{troll:false, title:"Filtración en la prensa", text:()=>"Un periodista lo ha contado todo: las cuatro pistas a la vista.",
+             apply(){ S.lot.clues=4; return {}; }},
+  chivatazo:{troll:false, title:"Chivatazo del ojeador", text:()=>"Se sabe la media de este jugador antes de pujar.",
+             apply(){ S.lot.peek=true; return {}; }},
+  rebajas:  {troll:false, title:"Rebajas de enero", text:()=>"Este lote sale por 1 M.",
+             apply(){ S.lot.salida=1; return {}; }},
+  farruco:  {troll:true, title:"El agente se pone farruco", text:()=>"Precio de salida doblado. Nadie sabe por qué.",
+             apply(){ const pos=POOL[S.lot.pi].pos; const reach=Math.max(...S.m.filter(m=>needs(m,pos)>0).map(maxBid)); S.lot.salida=Math.max(1,Math.min(reach,S.lot.salida*2)); return {}; }},
+  comision: {troll:true, title:"Comisión del representante", text:()=>"Quien gane este lote por puja paga 5 M extra al agente.",
+             apply(){ S.lot.tax=5; return {}; }},
+  skipgift: {troll:false, title:"Skip en el chándal", text:e=>`${nm(e.t)} encuentra un skip olvidado en el bolsillo: +1 skip.`,
+             apply(){ const t=pickR(idx()); S.m[t].skips++; return {t}; }},
+  skiprob:  {troll:true, title:"Robo en el vestuario", text:e=>`A ${nm(e.t)} le han robado un skip mientras se duchaba.`,
+             apply(){ const c=idx().filter(i=>S.m[i].skips>0); if(!c.length) return null; const t=pickR(c); S.m[t].skips--; return {t}; }},
+  padel:    {troll:true, title:"Lesión jugando al pádel", text:e=>`${esc(e.q)}, de ${nm(e.t)}, se lesiona en un torneo de pádel. Media −8.`,
+             apply(){ const c=idx().filter(i=>S.m[i].roster.some(x=>x.pos!=="DT")); if(!c.length) return null; const t=pickR(c); const x=pickR(S.m[t].roster.filter(x=>x.pos!=="DT")); x.r=Math.max(35,x.r-8); return {t,q:x.n}; }},
+  forma:    {troll:false, title:"Vuelve en forma", text:e=>`${esc(e.q)}, de ${nm(e.t)}, vuelve de vacaciones hecho un toro. Media +5.`,
+             apply(){ const c=idx().filter(i=>S.m[i].roster.length); if(!c.length) return null; const t=pickR(c); const x=pickR(S.m[t].roster); x.r=Math.min(99,x.r+5); return {t,q:x.n}; }},
+  cromos:   {troll:true, title:"Intercambio de cromos forzoso", text:e=>`${nm(e.t)} y ${nm(e.t2)} se cambian a ${esc(e.q)} y ${esc(e.p)}. Sin rechistar.`,
+             apply(){
+               const pairs=[]; idx().forEach(a=>idx().forEach(b=>{ if(a<b) POSL.forEach(pos=>{ if(S.m[a].roster.some(x=>x.pos===pos)&&S.m[b].roster.some(x=>x.pos===pos)) pairs.push([a,b,pos]); }); }));
+               if(!pairs.length) return null;
+               const [a,b,pos]=pickR(pairs), xa=pickR(S.m[a].roster.filter(x=>x.pos===pos)), xb=pickR(S.m[b].roster.filter(x=>x.pos===pos));
+               S.m[a].roster[S.m[a].roster.indexOf(xa)]=xb; S.m[b].roster[S.m[b].roster.indexOf(xb)]=xa;
+               return {t:a,t2:b,q:xa.n,p:xb.n};
+             }},
+};
+const LEVENTS = {
+  ibiza:  {troll:true, title:"Fiesta en Ibiza", text:e=>`El equipo de ${nm(e.t)} sale de fiesta la víspera. Toda la plantilla −2.`,
+           apply(){ const t=pickR(idx()); S.m[t].roster.forEach(x=>x.r=Math.max(35,x.r-2)); return {t}; }},
+  charla: {troll:false, title:"Charla motivadora", text:e=>`El entrenador de ${nm(e.t)} da una charla épica. Toda la plantilla +2.`,
+           apply(){ const t=pickR(idx()); S.m[t].roster.forEach(x=>x.r=Math.min(99,x.r+2)); return {t}; }},
+  calentar:{troll:true, title:"Lesión calentando", text:e=>`${esc(e.q)}, de ${nm(e.t)}, se lesiona haciendo el rondo. Media −10.`,
+           apply(){ const t=pickR(idx()); const x=pickR(S.m[t].roster.filter(x=>x.pos!=="DT")); x.r=Math.max(35,x.r-10); return {t,q:x.n}; }},
+  fichaje:{troll:false, title:"Se pone las pilas", text:e=>`${esc(e.q)}, de ${nm(e.t)}, ha contratado un nutricionista. Media +6.`,
+           apply(){ const t=pickR(idx()); const x=pickR(S.m[t].roster.filter(x=>x.pos!=="DT")); x.r=Math.min(99,x.r+6); return {t,q:x.n}; }},
+  gato:   {troll:true, title:"Un gato en el campo", text:()=>"Un gato invade el césped y se pasea por el área. No cambia nada, pero todo el mundo lo ha visto.",
+           apply(){ return {}; }},
+  peluca: {troll:true, title:"El DT estrena peluquín", text:e=>`El entrenador de ${nm(e.t)} aparece con peluquín nuevo. Nadie dice nada. Nadie.`,
+           apply(){ return {t:pickR(idx())}; }},
+};
+function rollEvent(table, chance){
+  if(Math.random()>=chance) return null;
+  const keys=Object.keys(table).sort(()=>Math.random()-.5);
+  for(const k of keys){ const r=table[k].apply(); if(r) return {k,...r}; }
+  return null;
+}
+function evHTML(ev, table, id){
+  const E=table[ev.k]; if(!E) return "";
+  return `<div class="event ${E.troll?"troll":""}" ${id?`id="${id}"`:""}><span class="label">${E.troll?"Evento vacilón":"Evento"}</span><b>${E.title}</b><span>${E.text(ev)}</span></div>`;
+}
+
+// ---------- Sonido (sintetizado, sin archivos) ----------
+let AC=null, muted=false;
+try{ muted=localStorage.getItem("subasta-mute")==="1"; }catch(e){}
+function audio(){
+  if(muted) return null;
+  if(!AC){ try{ AC=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){ return null; } }
+  if(AC.state==="suspended") AC.resume().catch(()=>{});
+  return AC;
+}
+["pointerdown","keydown"].forEach(t=>document.addEventListener(t,()=>{ if(!muted) audio(); },{once:false,passive:true}));
+function tone(f,d=.12,type="square",vol=.08,at=0,to=null){
+  const a=audio(); if(!a) return; const t=a.currentTime+at;
+  const o=a.createOscillator(), g=a.createGain(); o.type=type; o.frequency.setValueAtTime(f,t);
+  if(to) o.frequency.exponentialRampToValueAtTime(to,t+d);
+  g.gain.setValueAtTime(vol,t); g.gain.exponentialRampToValueAtTime(.0001,t+d);
+  o.connect(g).connect(a.destination); o.start(t); o.stop(t+d+.02);
+}
+function noise(d=.15,vol=.08,freq=1800,at=0){
+  const a=audio(); if(!a) return; const t=a.currentTime+at;
+  const b=a.createBuffer(1,Math.floor(a.sampleRate*d),a.sampleRate), ch=b.getChannelData(0);
+  for(let i=0;i<ch.length;i++) ch[i]=(Math.random()*2-1)*(1-i/ch.length);
+  const s=a.createBufferSource(), f=a.createBiquadFilter(), g=a.createGain();
+  f.type="bandpass"; f.frequency.value=freq; g.gain.value=vol; s.buffer=b;
+  s.connect(f).connect(g).connect(a.destination); s.start(t);
+}
+const SFX = {
+  bid(){ tone(660,.07,"square",.06); tone(990,.09,"square",.05,.06); },
+  clue(){ noise(.12,.12,2600); tone(1500,.05,"sine",.03,.03); },
+  tick(hot){ tone(hot?1500:1000,.05,"square",hot?.07:.04); },
+  sold(){ tone(110,.18,"sine",.25); noise(.06,.2,400); tone(880,.5,"triangle",.07,.12); tone(1320,.5,"triangle",.05,.16); },
+  desert(){ tone(330,.35,"sawtooth",.04,0,160); },
+  skip(){ noise(.25,.08,900); tone(500,.15,"sine",.03,0,250); },
+  event(){ [523,659,784,1047].forEach((f,i)=>tone(f,.14,"square",.05,i*.09)); },
+  troll(){ [392,370,349].forEach((f,i)=>tone(f,.32,"sawtooth",.05,i*.34)); tone(330,.8,"sawtooth",.05,1.02,300); },
+  wait(){ tone(220,.12,"sine",.06); },
+  go(){ tone(1200,.25,"square",.08); },
+  whistle(){ tone(2900,.16,"sine",.07); tone(2700,.16,"sine",.07,.18); tone(2900,.45,"sine",.07,.38); },
+  goal(at=0){ noise(.6,.15,1200,at); tone(784,.12,"square",.04,at); tone(1047,.2,"square",.04,at+.1); },
+  champ(){ [523,659,784,1047,784,1047].forEach((f,i)=>tone(f,.22,"triangle",.08,i*.16)); noise(1.2,.12,1400,.4); },
+  err(){ tone(180,.12,"square",.05); },
+};
+function toggleMute(){
+  muted=!muted; try{ localStorage.setItem("subasta-mute",muted?"1":"0"); }catch(e){}
+  if(!muted) SFX.bid();
+  const b=document.getElementById("mute"); if(b){ b.textContent=muted?"Sonido: no":"Sonido: sí"; b.setAttribute("aria-pressed",String(!muted)); }
+}
+
+// ---------- Feedback: compara lo que había con lo que hay y reacciona ----------
+let seen={};
+const reduceMotion = (()=>{ try{ return matchMedia("(prefers-reduced-motion: reduce)").matches; }catch(e){ return false; } })();
+function flashEl(id,cls){ const el=document.getElementById(id); if(!el) return; el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls); }
+function react(){
+  if(!S) return;
+  if(S.phase==="auction"&&S.lot){
+    const L=S.lot, M=L.mini, skips=L.skipped.filter(Boolean).length;
+    if(seen.di!==S.di||seen.phase!=="auction"){
+      if(L.ev){ (EVENTS[L.ev.k]&&EVENTS[L.ev.k].troll?SFX.troll:SFX.event)(); flashEl("evbanner","event-in"); }
+      else SFX.clue();
+      seen={phase:"auction",di:S.di,bid:L.bid,clues:L.clues,sold:!!L.sold,skips,mini:M&&M.phase,cd:L.cd};
+      return;
+    }
+    if(L.bid!==seen.bid&&L.leader>=0){ SFX.bid(); flashEl("price","bump"); flashEl("team"+L.leader,"pulse"); }
+    if(L.clues>seen.clues&&!L.sold) SFX.clue();
+    if(skips>seen.skips) SFX.skip();
+    if(L.sold&&!seen.sold){ if(L.sold.to>=0){ SFX.sold(); flashEl("stamp","stamp-in"); flashEl("team"+L.sold.to,"pulse"); } else SFX.desert(); }
+    const mp=M&&M.phase;
+    if(mp!==seen.mini){ if(mp==="wait") SFX.wait(); if(mp==="go"){ SFX.go(); flashEl("minilight","flash-go"); } }
+    if(!L.sold&&L.leader>=0&&L.cd!==seen.cd&&L.cd<=3&&L.cd>0) SFX.tick(L.cd<=2);
+    seen={phase:"auction",di:S.di,bid:L.bid,clues:L.clues,sold:!!L.sold,skips,mini:mp,cd:L.cd};
+  } else if(S.phase==="league"||S.phase==="final"){
+    const played=S.played||0, po=!!(S.playoff&&S.playoff.res), nlev=(S.lev||[]).length;
+    if(seen.phase==="league"){
+      if(nlev>seen.nlev){ const e=S.lev[S.lev.length-1]; (LEVENTS[e.k]&&LEVENTS[e.k].troll?SFX.troll:SFX.event)(); }
+      if(played>seen.played){
+        SFX.whistle();
+        const goals=S.fx.slice(seen.played,played).reduce((s,f)=>s+(f.res?f.res.gh+f.res.ga:0),0);
+        for(let g=0;g<Math.min(goals,4);g++) SFX.goal(.9+g*.35);
+        S.fx.slice(seen.played,played).forEach((f,k)=>flashEl("m"+(seen.played+k),"pulse"));
+      }
+      if(po&&!seen.po) SFX.whistle();
+    }
+    const champ=!!document.getElementById("champ");
+    if(champ&&!seen.champ){ setTimeout(()=>{ SFX.champ(); confetti(); },seen.phase==="league"?900:0); }
+    seen={phase:"league",played,po,nlev,champ};
+  } else seen={phase:S.phase};
+}
+function confetti(){
+  if(reduceMotion) return;
+  const c=document.createElement("canvas"); c.className="confetti"; document.body.appendChild(c);
+  const x=c.getContext("2d"); const W=c.width=innerWidth, H=c.height=innerHeight;
+  const cols=["#5cb3ff","#ff7096","#b996ff","#4fd6b8","#ffb627","#eef4ec"];
+  const P=Array.from({length:160},()=>({x:Math.random()*W,y:-20-Math.random()*H*.5,vx:(Math.random()-.5)*3,vy:2+Math.random()*4,s:4+Math.random()*6,r:Math.random()*6,c:pickR(cols)}));
+  const t0=performance.now();
+  (function f(t){
+    x.clearRect(0,0,W,H);
+    P.forEach(p=>{ p.x+=p.vx; p.y+=p.vy; p.r+=.1; x.save(); x.translate(p.x,p.y); x.rotate(p.r); x.fillStyle=p.c; x.fillRect(-p.s/2,-p.s/4,p.s,p.s/2); x.restore(); });
+    if(t-t0<3500) requestAnimationFrame(f); else c.remove();
+  })(t0);
+}
 
 function route(){
   if(!S) return renderSetup();
@@ -1020,6 +1239,7 @@ function route(){
   }
   else renderLeague();
 }
+{ const b=document.getElementById("mute"); b.onclick=toggleMute; b.textContent=muted?"Sonido: no":"Sonido: sí"; b.setAttribute("aria-pressed",String(!muted)); }
 renderSetup();
 </script>
 </body>
