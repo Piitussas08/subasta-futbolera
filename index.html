@@ -10,11 +10,11 @@
 <style>
 [hidden]{display:none!important}
 img{max-width:100%}
-/* Layout: estadio de noche. Arriba las tres plantillas (presupuesto y huecos), en el centro el lote misterioso con sus pistas, abajo las tres paletas de puja. */
+/* Layout: estadio de noche. Arriba las plantillas (de 2 a 4), en el centro el lote misterioso con sus pistas, abajo las paletas de puja. */
 :root{
   --pitch:#0c2a21; --pitch-2:#113629; --panel:#173f31; --panel-2:#0a1f18; --chalk:#eef4ec; --muted:#a9c2b4;
   --line:rgba(238,244,236,.16); --amber:#ffb627; --ok:#45c985; --bad:#ff5d5d;
-  --m1:#5cb3ff; --m2:#ff7096; --m3:#b996ff;
+  --m1:#5cb3ff; --m2:#ff7096; --m3:#b996ff; --m4:#4fd6b8;
   --f-display:"Big Shoulders Display","Arial Narrow",Impact,sans-serif;
   --f-body:"Barlow","Segoe UI",system-ui,sans-serif;
   --f-mono:"Chivo Mono",ui-monospace,Consolas,monospace;
@@ -58,7 +58,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 .formation{font-family:var(--f-mono);font-size:.85rem;color:var(--chalk)}
 
 /* Plantillas */
-.teams{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.teams{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,210px),1fr));gap:12px}
 .team{background:var(--panel-2);border:1px solid var(--line);border-top:4px solid var(--c);border-radius:8px;padding:12px;display:flex;flex-direction:column;gap:8px;min-width:0}
 .team.lead{box-shadow:0 0 0 2px var(--c)}
 .team .top{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
@@ -99,7 +99,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 .cdbar i{display:block;height:100%;background:var(--amber);transition:width 1s linear}
 @media (prefers-reduced-motion:reduce){.cdbar i{transition:none}}
 
-.paddles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.paddles{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,210px),1fr));gap:12px}
 .paddle{border:1.5px solid var(--line);border-radius:8px;padding:12px;display:flex;flex-direction:column;gap:8px;background:var(--panel);min-width:0}
 .paddle .pn{font-family:var(--f-display);font-weight:800;font-size:1.2rem;text-transform:uppercase;color:var(--c);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .paddle .why{font-size:.8rem;color:var(--muted);min-height:1.2em}
@@ -140,7 +140,7 @@ td.pts{font-family:var(--f-mono);font-weight:700;color:var(--amber);font-size:1.
 .jor{font-family:var(--f-mono);font-size:.8rem;color:var(--muted);padding-top:10px}
 .champ{text-align:center;padding:24px;border-radius:10px;background:var(--panel-2);border:2px solid var(--c);display:flex;flex-direction:column;gap:8px;align-items:center}
 .champ h1{font-size:clamp(2.6rem,9vw,5.5rem);font-weight:900;color:var(--c)}
-.xi{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.xi{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:12px}
 .xi .team .roster{max-height:none}
 .strength{display:flex;gap:10px;font-family:var(--f-mono);font-size:.8rem;color:var(--muted);flex-wrap:wrap}
 .strength b{color:var(--chalk)}
@@ -163,8 +163,10 @@ td.pts{font-family:var(--f-mono);font-weight:700;color:var(--amber);font-size:1.
 const SLOTS = {POR:1, DEF:4, MED:3, DEL:3, DT:1};
 const POS_NAME = {POR:"Portero", DEF:"Defensa", MED:"Centrocampista", DEL:"Delantero", DT:"Entrenador"};
 const SQUAD = 12, BUDGET = 200, CD = 8, CLUE_EVERY = 5, IDLE_LIMIT = 12;
-const COLORS = ["var(--m1)","var(--m2)","var(--m3)"];
-const KEYS = [["q","w","e"],["v","b","n"],["i","o","p"]];
+const COLORS = ["var(--m1)","var(--m2)","var(--m3)","var(--m4)"];
+const MAXP = 4, MINP = 2;
+const idx = () => S.m.map((_,i)=>i);
+const KEYS = [["q","w","e"],["v","b","n"],["i","o","p"],["1","2","3"]];
 const INCS = [1,5,10];
 
 // ---------- Jugadores: r = media oculta, p = pistas de más difícil a más fácil ----------
@@ -282,6 +284,7 @@ const load = () => { try{ return JSON.parse(localStorage.getItem("subasta-v3")||
 
 let S = null, timer = null, paused = false;
 let names = ["Ana","Leo","Mario"], laps = 2;
+const DEFAULT_NAMES = ["Ana","Leo","Mario","Sofía"];
 let saved = load();
 if(saved && saved.names) names = saved.names;
 
@@ -351,7 +354,7 @@ const resUnpack = r => r && {...r, sh:r.sh.map(gunpack), sa:r.sa.map(gunpack)};
 function pack(){
   const o={...S, deck:undefined, dl:S.deck?S.deck.length:0, pz:paused, seq:NET.seq};
   if(S.m) o.m=S.m.map(m=>({b:m.budget,s:m.skips,r:m.roster.map(x=>[pidx(x),x.price])}));
-  if(S.fx) o.fx=S.fx.map(f=>({h:f.h,a:f.a,res:resPack(f.res)}));
+  if(S.fx) o.fx=S.fx.map(f=>({h:f.h,a:f.a,j:f.j,res:resPack(f.res)}));
   if(S.playoff) o.playoff={...S.playoff,res:resPack(S.playoff.res)};
   // los mensajes de la sala tienen un límite de 4 KB: si no cabe, se quitan los goleadores
   if(JSON.stringify(o).length>3900 && o.fx) o.fx.forEach(f=>{ if(f.res){ f.res.sh=[]; f.res.sa=[]; } });
@@ -361,7 +364,7 @@ function unpack(o){
   const s={...o};
   s.deck=new Array(o.dl||0); paused=!!o.pz;
   if(o.m) s.m=o.m.map(m=>({budget:m.b,skips:m.s,roster:m.r.map(([i,p])=>fromIdx(i,p))}));
-  if(o.fx) s.fx=o.fx.map(f=>({h:f.h,a:f.a,res:resUnpack(f.res)}));
+  if(o.fx) s.fx=o.fx.map(f=>({h:f.h,a:f.a,j:f.j,res:resUnpack(f.res)}));
   if(o.playoff) s.playoff={...o.playoff,res:resUnpack(o.playoff.res)};
   return s;
 }
@@ -405,12 +408,13 @@ function onHello(msg){
   // alguien que recarga vuelve a su sitio por su nombre
   const back=seats.findIndex((s,k)=>k>0 && s.name===name && !here.has(s.peer));
   if(back>=0) seats[back].peer=msg.peer;
-  else if(S.phase==="lobby" && seats.length<3){
+  else if((S.phase==="lobby"||S.phase==="auction") && seats.length<MAXP){
     let nm=name, n=2; while(seats.some(s=>s.name===nm)) nm=(name+" "+n++).slice(0,16);
     seats.push({peer:msg.peer,name:nm});
     S.names=seats.map(s=>s.name);
+    if(S.phase==="auction") addManager(nm);
   }
-  save(); if(S.phase==="lobby") renderLobby();
+  save(); if(S.phase==="lobby") renderLobby(); else if(S.phase==="auction") renderAuction();
 }
 async function joinRoom(code){
   const r=await ROOM.join("sub-"+code.toLowerCase());
@@ -475,11 +479,11 @@ function renderLobby(){
   const seats=S.seats, isHost=NET.role==="host";
   app.innerHTML=`
   <header class="hero"><span class="label">Sala de espera</span><h1>Código <span class="mono">${esc(S.code)}</span></h1>
-    <p>Pasa este código a tus amigos. Solo tienen que abrir este mismo enlace, escribir el código y pulsar <b>Unirse</b>.</p></header>
-  <section class="teams">${[0,1,2].map(i=>`<div class="team" style="--c:${COLORS[i]}"><div class="top"><span class="nm">${seats[i]?esc(seats[i].name):"Libre"}</span><span class="note">${seats[i]?(seats[i].host?"Anfitrión":"Listo"):"Esperando…"}</span></div><span class="note">Mánager ${i+1}</span></div>`).join("")}</section>
+    <p>Pasa este código a tus amigos (de 2 a 4 mánagers). Solo tienen que abrir este mismo enlace, escribir el código y pulsar <b>Unirse</b>.</p></header>
+  <section class="teams">${[0,1,2,3].map(i=>`<div class="team" style="--c:${COLORS[i]}"><div class="top"><span class="nm">${seats[i]?esc(seats[i].name):"Libre"}</span><span class="note">${seats[i]?(seats[i].host?"Anfitrión":"Listo"):"Esperando…"}</span></div><span class="note">Mánager ${i+1}</span></div>`).join("")}</section>
   ${isHost?`<div class="box"><span class="label">Liga</span>
       <div class="seg" id="laps"><button data-l="2" aria-pressed="${S.laps===2}">Ida y vuelta</button><button data-l="4" aria-pressed="${S.laps===4}">Doble vuelta</button></div>
-      <div class="row"><button class="btn amber" id="gostart" ${seats.length<3?"disabled":""}>Empezar subasta</button><span class="note">${seats.length<3?`Faltan ${3-seats.length} mánagers`:"Estáis los tres"}</span></div></div>`
+      <div class="row"><button class="btn amber" id="gostart" ${seats.length<MINP?"disabled":""}>Empezar subasta</button><span class="note">${seats.length<MINP?"Hace falta al menos otro mánager":`Sois ${seats.length}. ${seats.length<MAXP?"Se puede seguir uniendo gente, también con la subasta empezada.":"Sala completa."}`}</span></div></div>`
     :`<p class="note">Esperando a que el anfitrión empiece la subasta.</p>`}`;
   if(isHost){
     app.querySelectorAll("#laps button").forEach(b=>b.onclick=()=>{S.laps=+b.dataset.l;save();renderLobby()});
@@ -493,7 +497,7 @@ function renderSetup(){
   const resumable = saved && saved.phase && saved.phase!=="setup";
   app.innerHTML = `
   <header class="hero">
-    <span class="label">Tres mánagers · un solo ordenador</span>
+    <span class="label">De 2 a 4 mánagers · en un ordenador u online</span>
     <h1>Subasta <span>Futbolera</span></h1>
     <p>Sale a subasta un futbolista misterioso. Solo sabéis su posición y unas pistas que se van destapando. Pujad sin saber quién es, montad un once con entrenador y que decida la liga.</p>
   </header>
@@ -508,15 +512,16 @@ function renderSetup(){
     </div><p class="flash" id="onmsg"></p>`
     :`<p class="note">${roomChecked?"No se ha podido cargar el modo online. Comprueba tu conexión a internet y recarga la página.":"Comprobando si se puede jugar online…"}</p>`}
   </section>
-  <p class="label">O los tres en este ordenador</p>
+  <p class="label">O todos en este ordenador</p>
   <section class="setup">
     <div class="box">
       <span class="label">Mánagers</span>
-      ${[0,1,2].map(i=>`<div class="field"><label class="label" for="m${i}">Mánager ${i+1} · pujas ${KEYS[i].join(" ").toUpperCase()} · skip ${SKIPKEYS[i].toUpperCase()}</label><input id="m${i}" maxlength="16" style="--c:${COLORS[i]}" value="${esc(names[i])}"></div>`).join("")}
+      <div class="seg" id="np">${[2,3,4].map(n=>`<button data-n="${n}" aria-pressed="${names.length===n}">${n} mánagers</button>`).join("")}</div>
+      ${names.map((_,i)=>`<div class="field"><label class="label" for="m${i}">Mánager ${i+1} · pujas ${KEYS[i].join(" ").toUpperCase()} · skip ${SKIPKEYS[i].toUpperCase()}</label><input id="m${i}" maxlength="16" style="--c:${COLORS[i]}" value="${esc(names[i])}"></div>`).join("")}
       <span class="label">Liga</span>
       <div class="seg" id="laps">
-        <button data-l="2" aria-pressed="${laps===2}">Ida y vuelta · 4 partidos por equipo</button>
-        <button data-l="4" aria-pressed="${laps===4}">Doble vuelta · 8 partidos</button>
+        <button data-l="2" aria-pressed="${laps===2}">Ida y vuelta · ${(names.length-1)*2} partidos por equipo</button>
+        <button data-l="4" aria-pressed="${laps===4}">Doble vuelta · ${(names.length-1)*4} partidos</button>
       </div>
     </div>
     <div class="box">
@@ -529,7 +534,7 @@ function renderSetup(){
         <li>La primera puja paga la salida (o salida +5 / +10). Después se sube de <b>+1, +5 o +10 M</b>, con los botones o las teclas.</li>
         <li>En cuanto alguien puja empieza la cuenta: <b>${CD} s</b> desde la última puja, falten pistas o no. A la una, a las dos… ¡vendido!</li>
         <li>Cada mánager tiene <b>${SKIPS} skips</b> por partida (teclas ${SKIPKEYS.join(" ").toUpperCase()}). Si nadie puja, el que no haya pasado <b>se queda el jugador por el precio de salida</b>, también si ya no le quedan skips.</li>
-        <li>Si son dos o tres los que no pujan ni pasan, se juegan un <b>minijuego de reflejos</b>: el más lento se lo queda por la salida.</li>
+        <li>Si son varios los que no pujan ni pasan, se juegan un <b>minijuego de reflejos</b>: el más lento se lo queda por la salida.</li>
         <li>No puedes pujar por un puesto que ya tienes completo, y siempre te tiene que quedar <b>1 M por hueco libre</b>.</li>
         <li>La calidad real (media) solo se descubre al venderse. Si todos pasan, el lote queda desierto.</li>
         <li>Ojo: no todos son cracks. Hay fichajes fallidos y auténticos timos con historias de equipo grande. La pista te puede engañar.</li>
@@ -541,15 +546,16 @@ function renderSetup(){
     </div>
   </section>`;
   app.querySelectorAll("#laps button").forEach(b=>b.onclick=()=>{readNames();laps=+b.dataset.l;renderSetup()});
+  app.querySelectorAll("#np button").forEach(b=>b.onclick=()=>{ readNames(); const n=+b.dataset.n; names=Array.from({length:n},(_,i)=>names[i]||DEFAULT_NAMES[i]); renderSetup(); });
   document.getElementById("start").onclick=()=>{readNames();startAuction()};
   const r=document.getElementById("resume"); if(r) r.onclick=()=>{ if(saved.code&&ROOM) return hostGame(saved.seats[0].name,saved); S=saved; route(); };
   const h=document.getElementById("host"); if(h) h.onclick=()=>hostGame(document.getElementById("on-name").value);
   const j=document.getElementById("join"); if(j) j.onclick=()=>joinGame(document.getElementById("on-code").value,document.getElementById("on-name").value);
 }
-function readNames(){ names=[0,1,2].map(i=>(document.getElementById("m"+i).value.trim()||"Mánager "+(i+1))); }
+function readNames(){ names=names.map((_,i)=>{ const el=document.getElementById("m"+i); return (el&&el.value.trim())||"Mánager "+(i+1); }); }
 
 // ---------- Subasta ----------
-const SKIPS = 3, SKIPKEYS = ["r","m","l"];
+const SKIPS = 3, SKIPKEYS = ["r","m","l","4"];
 function startAuction(){
   const online = NET.role==="host" ? {code:S.code, seats:S.seats} : {};
   S = {phase:"auction", names, laps, m:names.map(()=>({budget:BUDGET, roster:[], skips:SKIPS})), deck:shuffle(POOL.map((_,i)=>i)), di:-1, lot:null, sales:0, ...online};
@@ -563,7 +569,12 @@ function anyoneNeeds(pos){ return S.m.some(m=>needs(m,pos)>0 && maxBid(m)>=1); }
 // Puede entrar en este lote: necesita el puesto y llega al precio de salida
 const eligible = mi => { const L=S.lot, m=S.m[mi]; return needs(m,POOL[L.pi].pos)>0 && maxBid(m)>=L.salida; };
 // Quien no puja ni pasa: si nadie puja, a estos les toca el jugador
-const stuck = () => [0,1,2].filter(i=>eligible(i) && !S.lot.skipped[i]);
+const stuck = () => idx().filter(i=>eligible(i) && !S.lot.skipped[i]);
+// alguien se une a mitad de subasta: equipo nuevo con presupuesto completo; el lote en juego no le obliga
+function addManager(name){
+  S.m.push({budget:BUDGET, roster:[], skips:SKIPS});
+  if(S.lot && !S.lot.sold) S.lot.skipped[S.m.length-1]=true;
+}
 
 function nextLot(){
   stopMini();
@@ -574,7 +585,7 @@ function nextLot(){
   // salida al azar, sin relación con la media del jugador
   const reach=Math.max(...S.m.filter(m=>needs(m,pos)>0).map(maxBid));
   const salida=Math.max(1,Math.min(reach, 2+Math.floor(Math.random()*14)));
-  S.lot = {pi:S.deck[S.di], salida, clues:1, bid:0, leader:-1, cd:0, idle:0, skipped:[false,false,false], sold:null, mini:null, msg:""};
+  S.lot = {pi:S.deck[S.di], salida, clues:1, bid:0, leader:-1, cd:0, idle:0, skipped:S.m.map(()=>false), sold:null, mini:null, msg:""};
   S.phase = "auction"; paused = false;
   save(); renderAuction(true); run();
 }
@@ -688,7 +699,7 @@ function miniEnd(loser){
 }
 function miniHTML(){
   const M=S.lot.mini, n=i=>`<b style="color:${COLORS[i]}">${esc(S.names[i])}</b>`;
-  const w=M.who.map(n), who=w.length===2?`${w[0]} y ${w[1]}`:`${w[0]}, ${w[1]} y ${w[2]}`;
+  const w=M.who.map(n), who=w.slice(0,-1).join(", ")+" y "+w[w.length-1];
   const btns=M.who.map(i=>`<button class="bid mini" data-mini="${i}" style="--c:${COLORS[i]}" ${M.phase==="ready"||M.phase==="done"||!mine(i)?"disabled":""}>${esc(S.names[i])}<kbd>${mine(i)?keysOf(i).join(" ").toUpperCase():"remoto"}</kbd></button>`).join("");
   let state="";
   if(M.phase==="ready") state=`<p style="margin:0">Nadie ha pujado y ${who} no han pasado. Se juegan quién se queda con el jugador por <b>${S.lot.salida} M</b>.</p>
@@ -772,7 +783,7 @@ function renderAuction(fresh=false, newClue=false){
     </aside>
   </section>
   <section class="paddles">${S.m.map((m,i)=>`
-    <div class="paddle" style="--c:${COLORS[i]}${NET.role!=="local"&&mine(i)?";border-color:var(--c)":""}">
+    <div class="paddle" style="--c:${COLORS[i]}${NET.role!=="local"&&mine(i)?";border-color:var(--c);order:-1":""}">
       <span class="pn">${esc(S.names[i])}${NET.role!=="local"&&mine(i)?" · tú":""}</span>
       <div class="bids">${INCS.map((inc,k)=>`<button class="bid" data-m="${i}" data-inc="${inc}" ${canRaise(i,inc)&&mine(i)?"":"disabled"}>${priceFor(inc)} M${mine(i)?`<kbd>${keysOf(i)[k].toUpperCase()}</kbd>`:""}</button>`).join("")}</div>
       <button class="skipbtn" data-skip="${i}" ${canSkip(i)&&mine(i)?"":"disabled"}>Pasar (skip) · quedan ${m.skips??0} ${mine(i)?`<kbd>${skipKeyOf(i).toUpperCase()}</kbd>`:""}</button>
@@ -794,7 +805,7 @@ document.addEventListener("keydown",e=>{
   const L=S.lot, k=e.key.toLowerCase();
   if(L&&L.sold&&e.key==="Enter"){ e.preventDefault(); return A("next"); }
   // qué mánager controla esta tecla: en local, por su fila; en online, siempre el tuyo
-  const owner = i => NET.role==="local" ? i : NET.seat;
+  const owner = i => NET.role==="local" ? (i<S.m.length?i:-1) : NET.seat;
   const row = NET.role==="local" ? KEYS : [KEYS[0]], sk = NET.role==="local" ? SKIPKEYS : [SKIPKEYS[0]];
   if(L&&L.mini&&!L.sold){
     const r=row.findIndex((ks,i)=>ks.includes(k)||sk[i]===k);
@@ -810,10 +821,24 @@ document.addEventListener("keydown",e=>{
 function toLeague(){
   stop();
   S.m.forEach(m=>{ Object.keys(SLOTS).forEach(k=>{ while(count(m,k)<SLOTS[k]) m.roster.push({n:k==="DT"?"Segundo entrenador":"Canterano",pos:k,r:62,price:0}); }); });
-  const base=[[0,1],[2,0],[1,2],[1,0],[0,2],[2,1]];
-  const fixtures=[]; for(let l=0;l<S.laps/2;l++) base.forEach(f=>fixtures.push({h:f[0],a:f[1],res:null}));
+  const fixtures=roundRobin(S.m.length, S.laps);
   S.phase="league"; S.fx=fixtures; S.played=0; S.tiebreak=null;
   save(); renderLeague();
+}
+// Calendario por jornadas (método del círculo). Con número impar, cada jornada descansa uno.
+function roundRobin(n, laps){
+  const t=[...Array(n).keys()]; if(n%2) t.push(-1);
+  const R=t.length-1, half=t.length/2, ida=[];
+  let arr=[...t];
+  for(let r=0;r<R;r++){
+    const round=[];
+    for(let i=0;i<half;i++){ const x=arr[i], y=arr[arr.length-1-i]; if(x<0||y<0) continue; round.push(r%2?[y,x]:[x,y]); }
+    ida.push(round);
+    arr=[arr[0], arr[arr.length-1], ...arr.slice(1,-1)];
+  }
+  const rounds=[]; for(let l=0;l<laps;l++) ida.forEach(rd=>rounds.push(rd.map(([h,a])=>l%2?[a,h]:[h,a])));
+  const fx=[]; rounds.forEach((rd,j)=>rd.forEach(([h,a])=>fx.push({h,a,j:j+1,res:null})));
+  return fx;
 }
 function power(i){
   const R=S.m[i].roster, g=pos=>R.filter(x=>x.pos===pos).map(x=>x.r);
@@ -865,7 +890,7 @@ function playPlayoff(){
 }
 function playoffHTML(){
   const P=S.playoff, n=i=>esc(S.names[i]);
-  const intro=`Empate a ${standings()[0].pts} puntos entre ${n(P.h)} y ${n(P.a)}.${P.third!=null?` ${n(P.third)} también empata, pero queda fuera por diferencia de goles.`:""} El título se decide en un partido a vida o muerte.`;
+  const intro=`Empate a ${standings()[0].pts} puntos entre ${n(P.h)} y ${n(P.a)}.${P.out&&P.out.length?` ${P.out.map(n).join(" y ")} también ${P.out.length>1?"empatan":"empata"}, pero ${P.out.length>1?"quedan":"queda"} fuera por diferencia de goles.`:""} El título se decide en un partido a vida o muerte.`;
   if(!P.res) return `<section class="box" style="border-color:var(--amber)"><span class="label">Partido de desempate</span><h2 style="font-size:2.2rem">${n(P.h)} <span style="color:var(--muted)">vs</span> ${n(P.a)}</h2><p style="margin:0;color:var(--muted)">${intro}</p><div class="row"><button class="btn amber" id="po">Jugar el desempate</button></div></section>`;
   const r=P.res, dots=a=>a.map(x=>`<span style="color:${x?"var(--ok)":"var(--bad)"}">${x?"●":"✕"}</span>`).join(" ");
   return `<section class="box" style="border-color:var(--amber)"><span class="label">Partido de desempate${r.et?" · con prórroga":""}${r.pens?" · penaltis":""}</span>
@@ -876,7 +901,8 @@ function playoffHTML(){
 }
 function playNext(){
   if(S.played>=S.fx.length) return;
-  playMatch(S.fx[S.played]); S.played++;
+  const j=S.fx[S.played].j;
+  while(S.played<S.fx.length && S.fx[S.played].j===j){ playMatch(S.fx[S.played]); S.played++; }
   if(S.played===S.fx.length) S.phase="final";
   save(); renderLeague();
 }
@@ -904,13 +930,15 @@ function renderLeague(){
     const lead=T.filter(t=>t.pts===T[0].pts);
     if(lead.length===1) champ={i:T[0].i};
     else {
-      if(!S.playoff){ S.playoff={h:lead[0].i,a:lead[1].i,third:lead[2]?lead[2].i:null,res:null}; save(); }
+      if(!S.playoff){ S.playoff={h:lead[0].i,a:lead[1].i,out:lead.slice(2).map(t=>t.i),res:null}; save(); }
       if(S.playoff.res) champ={i:S.playoff.winner,po:true};
     }
   }
-  const rest=f=>[0,1,2].find(x=>x!==f.h&&x!==f.a);
   const fxHTML=S.fx.map((f,k)=>{
-    const head=`<div class="jor">Jornada ${k+1} · descansa ${esc(S.names[rest(f)])}</div>`;
+    const first=k===0||S.fx[k-1].j!==f.j;
+    const busy=new Set(S.fx.filter(x=>x.j===f.j).flatMap(x=>[x.h,x.a]));
+    const rest=idx().filter(x=>!busy.has(x));
+    const head=first?`<div class="jor">Jornada ${f.j}${rest.length?` · descansa ${rest.map(x=>esc(S.names[x])).join(", ")}`:""}</div>`:"";
     const sc=f.res?`${f.res.gh} – ${f.res.ga}`:"vs";
     const gl=f.res?`<div class="gl"><div>${f.res.sh.map(g=>`${esc(g.n)} ${g.m}'`).join("<br>")}</div><div>${f.res.sa.map(g=>`${g.m}' ${esc(g.n)}`).join("<br>")}</div></div>`:"";
     return `${head}<div class="match"><span class="tn h" style="color:${COLORS[f.h]}">${esc(S.names[f.h])}</span><span class="sc mono">${sc}</span><span class="tn" style="color:${COLORS[f.a]}">${esc(S.names[f.a])}</span>${gl}</div>`;
@@ -930,7 +958,7 @@ function renderLeague(){
     <div class="box">
       <div class="row" style="justify-content:space-between"><span class="label">Calendario</span>
         <div class="row">${done?`<button class="btn amber sm" id="again">${NET.role==="client"?"Salir":"Nueva subasta"}</button><button class="btn ghost sm" id="replay">Repetir liga</button>`
-          :`<button class="btn amber sm" id="play">Jugar jornada ${S.played+1}</button><button class="btn ghost sm" id="all">Simular todo</button>`}</div></div>
+          :`<button class="btn amber sm" id="play">Jugar jornada ${S.fx[S.played].j}</button><button class="btn ghost sm" id="all">Simular todo</button>`}</div></div>
       ${fxHTML}
     </div>
     <div style="display:flex;flex-direction:column;gap:16px;min-width:0">
