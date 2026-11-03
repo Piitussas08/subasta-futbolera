@@ -79,6 +79,16 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 .pos{font-family:var(--f-display);font-weight:900;font-size:1.1rem;letter-spacing:.06em;text-transform:uppercase;background:#0f2219;color:var(--chalk);padding:4px 10px;border-radius:4px}
 .lot .count{font-family:var(--f-mono);font-size:.8rem;color:#3c5a4b}
 .lot h2{font-size:clamp(2rem,5vw,3rem);font-weight:900}
+.career{display:flex;flex-wrap:wrap;gap:8px}
+.club{position:relative;background:#0f2219;color:var(--chalk);border-radius:6px;padding:9px 12px;flex:1 1 130px;max-width:210px;display:flex;flex-direction:column;gap:4px;min-width:0}
+.club .yrs{font-family:var(--f-mono);font-size:.78rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.club .cn{font-family:var(--f-display);font-weight:800;font-size:1.2rem;text-transform:uppercase;line-height:1}
+.club.loan{background:transparent;color:#0f2219;border:1.5px dashed #3c5a4b}
+.club.loan .yrs{color:#3c5a4b}
+.club .tag{position:absolute;top:6px;right:8px;font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;font-weight:700;color:#c2410c}
+.club.hidden{background:transparent;border:1.5px dashed #b8c8bf;color:#7d958a}
+.club.new{animation:in .45s both}
+@media (prefers-reduced-motion:reduce){.club.new{animation:none}}
 .clues{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px;counter-reset:k}
 .clues li{counter-increment:k;display:grid;grid-template-columns:2.2em 1fr;gap:10px;font-size:1.08rem;line-height:1.4;font-weight:500}
 .clues li::before{content:"0" counter(k);font-family:var(--f-mono);font-weight:700;color:#3c5a4b;padding-top:.15em}
@@ -371,6 +381,107 @@ const POOL = [
  {n:"Ole Gunnar Solskjær",pos:"DT",r:74,p:["Como jugador lo llamaban 'el asesino con cara de niño'.","Marcó cuatro goles en doce minutos saliendo desde el banquillo.","Entrenó al Molde y al Cardiff.","Volvió a su exclub como interino en diciembre de 2018."]},
  {n:"Santiago Solari",pos:"DT",r:70,p:["Como jugador ganó una Champions con el Madrid.","Subió desde el filial tras el despido de su predecesor.","Ganó un Mundial de Clubes como entrenador del primer equipo.","Después entrenó al América de México."]},
  {n:"Marcelo Bielsa",pos:"DT",r:85,p:["Su apodo está relacionado con la locura.","Llevó a un club vasco a dos finales en la misma temporada.","Admitió haber mandado espiar un entrenamiento rival en Inglaterra.","Dirige a una selección sudamericana que no es la suya."]},
+ // ===== MODO TRAYECTORIA: c = [club, años, cedido?] (en los DT, los banquillos) =====
+ // PORTEROS
+ {n:"Jan Oblak",pos:"POR",r:89,c:[["Olimpija","2009–2010"],["Benfica","2010–2014"],["Beira-Mar","2010–2011",1],["União Leiria","2011–2012",1],["Rio Ave","2012–2013",1],["Atlético de Madrid","2014–"]]},
+ {n:"Thibaut Courtois",pos:"POR",r:90,c:[["Genk","2009–2011"],["Chelsea","2011–2018"],["Atlético de Madrid","2011–2014",1],["Real Madrid","2018–"]]},
+ {n:"David de Gea",pos:"POR",r:86,c:[["Atlético de Madrid","2009–2011"],["Manchester United","2011–2023"],["Fiorentina","2024–"]]},
+ {n:"Víctor Valdés",pos:"POR",r:83,c:[["Barcelona","2002–2014"],["Manchester United","2014–2016"],["Standard de Lieja","2016",1],["Middlesbrough","2016–2017"]]},
+ {n:"Pepe Reina",pos:"POR",r:82,c:[["Barcelona","2000–2002"],["Villarreal","2002–2005"],["Liverpool","2005–2014"],["Napoli","2013–2014",1],["Bayern Múnich","2014–2015"],["Napoli","2015–2018"],["Milan","2018–2020"],["Aston Villa","2020",1],["Lazio","2020–2022"],["Villarreal","2022–2024"],["Como","2024–"]]},
+ {n:"Diego López",pos:"POR",r:79,c:[["Real Madrid","2005–2007"],["Villarreal","2007–2012"],["Sevilla","2012–2013"],["Real Madrid","2013–2014"],["Milan","2014–2016"],["Espanyol","2016–2021"],["Rayo Vallecano","2021–2022"]]},
+ // DEFENSAS
+ {n:"Gerard Piqué",pos:"DEF",r:88,c:[["Manchester United","2004–2008"],["Real Zaragoza","2006–2007",1],["Barcelona","2008–2022"]]},
+ {n:"Raphaël Varane",pos:"DEF",r:87,c:[["Lens","2010–2011"],["Real Madrid","2011–2021"],["Manchester United","2021–2024"],["Como","2024"]]},
+ {n:"John Terry",pos:"DEF",r:88,c:[["Chelsea","1998–2017"],["Nottingham Forest","2000",1],["Aston Villa","2017–2018"]]},
+ {n:"Alessandro Nesta",pos:"DEF",r:90,c:[["Lazio","1993–2002"],["Milan","2002–2012"],["Montreal Impact","2012–2013"],["Chennaiyin","2014"]]},
+ {n:"Ashley Cole",pos:"DEF",r:86,c:[["Arsenal","1999–2006"],["Crystal Palace","2000",1],["Chelsea","2006–2014"],["Roma","2014–2016"],["LA Galaxy","2016–2018"],["Derby County","2019"]]},
+ {n:"Mats Hummels",pos:"DEF",r:87,c:[["Bayern Múnich","2006–2008"],["Borussia Dortmund","2008–2016"],["Bayern Múnich","2016–2019"],["Borussia Dortmund","2019–2024"],["Roma","2024–2025"]]},
+ {n:"Leonardo Bonucci",pos:"DEF",r:86,c:[["Inter","2005–2007"],["Bari","2009–2010"],["Juventus","2010–2017"],["Milan","2017–2018"],["Juventus","2018–2023"],["Unión Berlín","2023–2024"],["Fenerbahçe","2024"]]},
+ {n:"Raúl Albiol",pos:"DEF",r:82,c:[["Valencia","2003–2009"],["Getafe","2004–2005",1],["Real Madrid","2009–2013"],["Napoli","2013–2019"],["Villarreal","2019–"]]},
+ {n:"Javi Martínez",pos:"DEF",r:84,c:[["Athletic Club","2006–2012"],["Bayern Múnich","2012–2022"],["Qatar SC","2022–"]]},
+ {n:"João Cancelo",pos:"DEF",r:84,c:[["Benfica","2012–2014"],["Valencia","2014–2017"],["Inter","2017–2018",1],["Juventus","2018–2019"],["Manchester City","2019–2024"],["Bayern Múnich","2023",1],["Barcelona","2023–2024",1],["Al-Hilal","2024–"]]},
+ {n:"Kyle Walker",pos:"DEF",r:84,c:[["Sheffield United","2008–2009"],["Tottenham","2009–2017"],["QPR","2010",1],["Aston Villa","2011",1],["Manchester City","2017–2025"],["Milan","2025",1],["Burnley","2025–"]]},
+ {n:"Ezequiel Garay",pos:"DEF",r:80,c:[["Newell's Old Boys","2004–2005"],["Racing de Santander","2005–2008"],["Real Madrid","2008–2011"],["Benfica","2011–2014"],["Zenit","2014–2016"],["Valencia","2016–2020"]]},
+ {n:"Thomas Vermaelen",pos:"DEF",r:73,c:[["Ajax","2006–2009"],["Arsenal","2009–2014"],["Barcelona","2014–2019"],["Roma","2016–2017",1],["Vissel Kobe","2019–2022"]]},
+ {n:"Jérémy Mathieu",pos:"DEF",r:74,c:[["Sochaux","2002–2007"],["Toulouse","2007–2009"],["Valencia","2009–2014"],["Barcelona","2014–2017"],["Sporting CP","2017–2020"]]},
+ {n:"Fábio Coentrão",pos:"DEF",r:70,c:[["Rio Ave","2007–2008"],["Benfica","2008–2011"],["Real Madrid","2011–2018"],["Monaco","2015–2016",1],["Sporting CP","2017–2018",1],["Rio Ave","2018–2019"]]},
+ {n:"Dejan Lovren",pos:"DEF",r:72,c:[["Dinamo Zagreb","2006–2010"],["Lyon","2010–2013"],["Southampton","2013–2014"],["Liverpool","2014–2020"],["Zenit","2020–2023"],["Lyon","2023"],["PAOK","2024–"]]},
+ {n:"Marcos Rojo",pos:"DEF",r:68,c:[["Estudiantes","2008–2010"],["Spartak Moscú","2011–2012"],["Sporting CP","2012–2014"],["Manchester United","2014–2021"],["Estudiantes","2020",1],["Boca Juniors","2021–"]]},
+ {n:"Eliaquim Mangala",pos:"DEF",r:64,c:[["Standard de Lieja","2008–2011"],["Porto","2011–2014"],["Manchester City","2014–2019"],["Valencia","2016–2017",1],["Everton","2018",1],["Valencia","2019–2021"],["Saint-Étienne","2021–2022"]]},
+ // CENTROCAMPISTAS
+ {n:"Toni Kroos",pos:"MED",r:90,c:[["Bayern Múnich","2007–2014"],["Bayer Leverkusen","2009–2010",1],["Real Madrid","2014–2024"]]},
+ {n:"David Beckham",pos:"MED",r:87,c:[["Manchester United","1992–2003"],["Preston North End","1995",1],["Real Madrid","2003–2007"],["LA Galaxy","2007–2012"],["Milan","2009–2010",1],["Paris Saint-Germain","2013"]]},
+ {n:"Xabi Alonso",pos:"MED",r:88,c:[["Real Sociedad","1999–2004"],["Eibar","2000–2001",1],["Liverpool","2004–2009"],["Real Madrid","2009–2014"],["Bayern Múnich","2014–2017"]]},
+ {n:"Claude Makélélé",pos:"MED",r:87,c:[["Nantes","1991–1997"],["Olympique de Marsella","1997–1998"],["Celta de Vigo","1998–2000"],["Real Madrid","2000–2003"],["Chelsea","2003–2008"],["Paris Saint-Germain","2008–2011"]]},
+ {n:"Wesley Sneijder",pos:"MED",r:87,c:[["Ajax","2002–2007"],["Real Madrid","2007–2009"],["Inter","2009–2013"],["Galatasaray","2013–2017"],["Niza","2017"],["Al-Gharafa","2018–2019"]]},
+ {n:"Paul Pogba",pos:"MED",r:84,c:[["Manchester United","2011–2012"],["Juventus","2012–2016"],["Manchester United","2016–2022"],["Juventus","2022–2024"],["Monaco","2025–"]]},
+ {n:"Javier Mascherano",pos:"MED",r:85,c:[["River Plate","2003–2005"],["Corinthians","2005–2006"],["West Ham","2006–2007"],["Liverpool","2007–2010"],["Barcelona","2010–2018"],["Hebei China Fortune","2018–2019"],["Estudiantes","2019–2020"]]},
+ {n:"Pablo Aimar",pos:"MED",r:84,c:[["River Plate","1996–2001"],["Valencia","2001–2006"],["Real Zaragoza","2006–2008"],["Benfica","2008–2013"],["Johor Darul Ta'zim","2013–2014"],["River Plate","2015"]]},
+ {n:"Gaizka Mendieta",pos:"MED",r:82,c:[["Castellón","1991–1992"],["Valencia","1992–2001"],["Lazio","2001–2003"],["Barcelona","2002–2003",1],["Middlesbrough","2003–2008"]]},
+ {n:"Seydou Keita",pos:"MED",r:81,c:[["Olympique de Marsella","1999–2000"],["Lorient","2000–2002"],["Lens","2002–2007"],["Sevilla","2007–2008"],["Barcelona","2008–2012"],["Dalian Aerbin","2012–2014"],["Valencia","2014",1],["Roma","2014–2016"],["El Jaish","2016–2017"]]},
+ {n:"Iván de la Peña",pos:"MED",r:80,c:[["Barcelona","1995–1998"],["Lazio","1998–2002"],["Olympique de Marsella","2000–2001",1],["Barcelona","2001–2002",1],["Espanyol","2002–2011"]]},
+ {n:"Maxi Rodríguez",pos:"MED",r:80,c:[["Newell's Old Boys","1999–2002"],["Espanyol","2002–2005"],["Atlético de Madrid","2005–2010"],["Liverpool","2010–2012"],["Newell's Old Boys","2012–2017"],["Peñarol","2017–2018"],["Newell's Old Boys","2018–2021"]]},
+ {n:"Shinji Kagawa",pos:"MED",r:78,c:[["Cerezo Osaka","2006–2010"],["Borussia Dortmund","2010–2012"],["Manchester United","2012–2014"],["Borussia Dortmund","2014–2019"],["Beşiktaş","2019",1],["Real Zaragoza","2019–2020"],["PAOK","2021"],["Sint-Truiden","2022–2023"],["Cerezo Osaka","2023–"]]},
+ {n:"Fernando Gago",pos:"MED",r:76,c:[["Boca Juniors","2004–2007"],["Real Madrid","2007–2012"],["Roma","2011–2012",1],["Valencia","2012–2013"],["Vélez Sarsfield","2013"],["Boca Juniors","2013–2019"],["Vélez Sarsfield","2019–2020"]]},
+ {n:"Julio Baptista",pos:"MED",r:74,c:[["São Paulo","2000–2003"],["Sevilla","2003–2005"],["Real Madrid","2005–2008"],["Arsenal","2006–2007",1],["Roma","2008–2010"],["Málaga","2011–2013"],["Orlando City","2015"],["CFR Cluj","2016"]]},
+ {n:"Alexander Hleb",pos:"MED",r:72,c:[["BATE Borisov","1999–2000"],["Stuttgart","2000–2005"],["Arsenal","2005–2008"],["Barcelona","2008–2012"],["Stuttgart","2009–2010",1],["Birmingham City","2010–2011",1],["Wolfsburgo","2011–2012",1],["Krylia Sovetov","2012"],["BATE Borisov","2012–2014"],["Konyaspor","2015"]]},
+ {n:"Alex Song",pos:"MED",r:68,c:[["Bastia","2003–2005"],["Arsenal","2005–2014"],["Charlton","2007",1],["Barcelona","2012–2014"],["West Ham","2014–2016",1],["Rubin Kazán","2016–2017"],["Sion","2017–2020"],["Arta/Solar7 (Yibuti)","2020–2022"]]},
+ {n:"Danny Drinkwater",pos:"MED",r:62,c:[["Manchester United","2008–2012"],["Leicester City","2012–2017"],["Chelsea","2017–2022"],["Burnley","2019",1],["Aston Villa","2020",1],["Kasımpaşa","2021",1],["Reading","2022",1]]},
+ {n:"Tiémoué Bakayoko",pos:"MED",r:64,c:[["Rennes","2013–2014"],["Monaco","2014–2017"],["Chelsea","2017–2022"],["Milan","2018–2019",1],["Monaco","2019–2020",1],["Napoli","2020–2021",1],["Milan","2021–2022",1],["Lorient","2023–2024"]]},
+ {n:"Royston Drenthe",pos:"MED",r:62,c:[["Feyenoord","2005–2007"],["Real Madrid","2007–2012"],["Hércules","2010–2011",1],["Everton","2011–2012",1],["Alania Vladikavkaz","2012–2013"],["Reading","2013–2014"],["Sheffield Wednesday","2014",1],["Kayseri Erciyesspor","2015"],["Baniyas","2016"],["Sparta Rotterdam","2016–2017"]]},
+ // DELANTEROS
+ {n:"Lionel Messi",pos:"DEL",r:97,c:[["Barcelona","2004–2021"],["Paris Saint-Germain","2021–2023"],["Inter Miami","2023–"]]},
+ {n:"Cristiano Ronaldo",pos:"DEL",r:96,c:[["Sporting CP","2002–2003"],["Manchester United","2003–2009"],["Real Madrid","2009–2018"],["Juventus","2018–2021"],["Manchester United","2021–2022"],["Al-Nassr","2023–"]]},
+ {n:"Kylian Mbappé",pos:"DEL",r:92,c:[["Monaco","2015–2017"],["Paris Saint-Germain","2017–2024"],["Real Madrid","2024–"]]},
+ {n:"Neymar",pos:"DEL",r:90,c:[["Santos","2009–2013"],["Barcelona","2013–2017"],["Paris Saint-Germain","2017–2023"],["Al-Hilal","2023–2025"],["Santos","2025–"]]},
+ {n:"Karim Benzema",pos:"DEL",r:89,c:[["Lyon","2004–2009"],["Real Madrid","2009–2023"],["Al-Ittihad","2023–"]]},
+ {n:"Ruud van Nistelrooy",pos:"DEL",r:88,c:[["Den Bosch","1993–1997"],["Heerenveen","1997–1998"],["PSV","1998–2001"],["Manchester United","2001–2006"],["Real Madrid","2006–2010"],["Hamburgo","2010–2011"],["Málaga","2011–2012"]]},
+ {n:"Arjen Robben",pos:"DEL",r:88,c:[["Groningen","2000–2002"],["PSV","2002–2004"],["Chelsea","2004–2007"],["Real Madrid","2007–2009"],["Bayern Múnich","2009–2019"],["Groningen","2020–2021"]]},
+ {n:"Gareth Bale",pos:"DEL",r:87,c:[["Southampton","2006–2007"],["Tottenham","2007–2013"],["Real Madrid","2013–2022"],["Tottenham","2020–2021",1],["Los Angeles FC","2022"]]},
+ {n:"Wayne Rooney",pos:"DEL",r:87,c:[["Everton","2002–2004"],["Manchester United","2004–2017"],["Everton","2017–2018"],["DC United","2018–2019"],["Derby County","2020–2021"]]},
+ {n:"David Villa",pos:"DEL",r:87,c:[["Sporting de Gijón","2000–2003"],["Real Zaragoza","2003–2005"],["Valencia","2005–2010"],["Barcelona","2010–2013"],["Atlético de Madrid","2013–2014"],["New York City FC","2014–2018"],["Melbourne City","2014",1],["Vissel Kobe","2019"]]},
+ {n:"Ángel Di María",pos:"DEL",r:86,c:[["Rosario Central","2005–2007"],["Benfica","2007–2010"],["Real Madrid","2010–2014"],["Manchester United","2014–2015"],["Paris Saint-Germain","2015–2022"],["Juventus","2022–2023"],["Benfica","2023–2025"],["Rosario Central","2025–"]]},
+ {n:"Radamel Falcao",pos:"DEL",r:86,c:[["River Plate","2005–2009"],["Porto","2009–2011"],["Atlético de Madrid","2011–2013"],["Monaco","2013–2019"],["Manchester United","2014–2015",1],["Chelsea","2015–2016",1],["Galatasaray","2019–2021"],["Rayo Vallecano","2021–2024"],["Millonarios","2024–2025"]]},
+ {n:"Edinson Cavani",pos:"DEL",r:86,c:[["Danubio","2005–2007"],["Palermo","2007–2010"],["Napoli","2010–2013"],["Paris Saint-Germain","2013–2020"],["Manchester United","2020–2022"],["Valencia","2022–2023"],["Boca Juniors","2023–"]]},
+ {n:"Gonzalo Higuaín",pos:"DEL",r:85,c:[["River Plate","2005–2007"],["Real Madrid","2007–2013"],["Napoli","2013–2016"],["Juventus","2016–2020"],["Milan","2018–2019",1],["Chelsea","2019",1],["Inter Miami","2020–2022"]]},
+ {n:"Carlos Tevez",pos:"DEL",r:85,c:[["Boca Juniors","2001–2004"],["Corinthians","2005–2006"],["West Ham","2006–2007"],["Manchester United","2007–2009"],["Manchester City","2009–2013"],["Juventus","2013–2015"],["Boca Juniors","2015–2016"],["Shanghai Shenhua","2017–2018"],["Boca Juniors","2018–2021"]]},
+ {n:"Michael Owen",pos:"DEL",r:85,c:[["Liverpool","1996–2004"],["Real Madrid","2004–2005"],["Newcastle","2005–2009"],["Manchester United","2009–2012"],["Stoke City","2012–2013"]]},
+ {n:"Romelu Lukaku",pos:"DEL",r:84,c:[["Anderlecht","2009–2011"],["Chelsea","2011–2014"],["West Brom","2012–2013",1],["Everton","2014–2017"],["Manchester United","2017–2019"],["Inter","2019–2021"],["Chelsea","2021–2024"],["Inter","2022–2023",1],["Roma","2023–2024",1],["Napoli","2024–"]]},
+ {n:"Diego Milito",pos:"DEL",r:84,c:[["Racing Club","1999–2004"],["Genoa","2004–2005"],["Real Zaragoza","2005–2008"],["Genoa","2008–2009"],["Inter","2009–2014"],["Racing Club","2014–2016"]]},
+ {n:"Nicolas Anelka",pos:"DEL",r:82,c:[["Paris Saint-Germain","1995–1997"],["Arsenal","1997–1999"],["Real Madrid","1999–2000"],["Paris Saint-Germain","2000–2002"],["Liverpool","2001–2002",1],["Manchester City","2002–2005"],["Fenerbahçe","2005–2006"],["Bolton","2006–2008"],["Chelsea","2008–2012"],["Shanghai Shenhua","2012"],["Juventus","2013",1],["West Brom","2013–2014"],["Mumbai City","2014–2015"]]},
+ {n:"Fernando Morientes",pos:"DEL",r:81,c:[["Albacete","1993–1995"],["Real Zaragoza","1995–1997"],["Real Madrid","1997–2005"],["Monaco","2003–2004",1],["Liverpool","2005–2006"],["Valencia","2006–2008"],["Olympique de Marsella","2009–2010"]]},
+ {n:"Javier Saviola",pos:"DEL",r:80,c:[["River Plate","1998–2001"],["Barcelona","2001–2007"],["Monaco","2004–2005",1],["Sevilla","2005–2006",1],["Real Madrid","2007–2009"],["Benfica","2009–2012"],["Málaga","2012–2013"],["Olympiacos","2013–2014"],["Hellas Verona","2014–2015"],["River Plate","2015–2016"]]},
+ {n:"Ricardo Quaresma",pos:"DEL",r:80,c:[["Sporting CP","2001–2003"],["Barcelona","2003–2004"],["Porto","2004–2008"],["Inter","2008–2010"],["Chelsea","2009",1],["Beşiktaş","2010–2012"],["Al-Ahli Dubái","2012–2013"],["Porto","2014–2015"],["Beşiktaş","2015–2019"],["Kasımpaşa","2019–2020"],["Vitória Guimarães","2020–2021"]]},
+ {n:"Klaas-Jan Huntelaar",pos:"DEL",r:80,c:[["PSV","2000–2004"],["De Graafschap","2002–2003",1],["AGOVV","2003–2004",1],["Heerenveen","2004–2006"],["Ajax","2006–2009"],["Real Madrid","2009"],["Milan","2009–2010"],["Schalke 04","2010–2017"],["Ajax","2017–2021"],["Schalke 04","2021"]]},
+ {n:"Hatem Ben Arfa",pos:"DEL",r:77,c:[["Lyon","2004–2008"],["Olympique de Marsella","2008–2010"],["Newcastle","2010–2014"],["Hull City","2014",1],["Niza","2015–2016"],["Paris Saint-Germain","2016–2018"],["Rennes","2018–2019"],["Real Valladolid","2020"],["Burdeos","2020–2021"],["Lille","2021–2022"]]},
+ {n:"Antonio Cassano",pos:"DEL",r:78,c:[["Bari","1999–2001"],["Roma","2001–2006"],["Real Madrid","2006–2007"],["Sampdoria","2007–2011"],["Milan","2011–2012"],["Inter","2012–2013"],["Parma","2013–2015"],["Sampdoria","2015–2017"]]},
+ {n:"Emmanuel Adebayor",pos:"DEL",r:77,c:[["Metz","2001–2003"],["Monaco","2003–2006"],["Arsenal","2006–2009"],["Manchester City","2009–2012"],["Real Madrid","2011",1],["Tottenham","2011–2015"],["Crystal Palace","2016"],["İstanbul Başakşehir","2017–2019"],["Kayserispor","2019–2020"],["Olimpia","2020"]]},
+ {n:"Adriano",pos:"DEL",r:76,c:[["Flamengo","2000–2001"],["Inter","2001–2009"],["Fiorentina","2001–2002",1],["Parma","2002–2004"],["São Paulo","2008",1],["Flamengo","2009–2010"],["Roma","2010–2011"],["Corinthians","2011–2012"],["Flamengo","2012"],["Atlético Paranaense","2014"],["Miami United","2016"]]},
+ {n:"Alexandre Pato",pos:"DEL",r:72,c:[["Internacional","2006–2007"],["Milan","2007–2013"],["Corinthians","2013–2016"],["São Paulo","2014–2015",1],["Chelsea","2016",1],["Villarreal","2016–2017"],["Tianjin Quanjian","2017–2019"],["São Paulo","2019–2020"],["Orlando City","2021–2022"]]},
+ {n:"Javier Hernández",pos:"DEL",r:78,c:[["Chivas","2006–2010"],["Manchester United","2010–2015"],["Real Madrid","2014–2015",1],["Bayer Leverkusen","2015–2017"],["West Ham","2017–2019"],["Sevilla","2019–2020"],["LA Galaxy","2020–2023"],["Chivas","2024–"]]},
+ {n:"Fernando Llorente",pos:"DEL",r:78,c:[["Athletic Club","2004–2013"],["Juventus","2013–2015"],["Sevilla","2015–2016"],["Swansea","2016–2017"],["Tottenham","2017–2019"],["Napoli","2019–2021"],["Udinese","2021"],["Eibar","2021–2022"]]},
+ {n:"Salomón Rondón",pos:"DEL",r:72,c:[["Aragua","2006–2008"],["Las Palmas","2008–2010"],["Málaga","2010–2012"],["Rubin Kazán","2012–2014"],["Zenit","2014–2015"],["West Brom","2015–2019"],["Newcastle","2018–2019",1],["Dalian Pro","2019–2021"],["CSKA Moscú","2021",1],["Everton","2021–2022"],["River Plate","2023"],["Pachuca","2023–"]]},
+ {n:"Obafemi Martins",pos:"DEL",r:72,c:[["Inter","2001–2006"],["Newcastle","2006–2009"],["Wolfsburgo","2009–2010"],["Rubin Kazán","2010–2012"],["Birmingham City","2011",1],["Levante","2012–2013"],["Seattle Sounders","2013–2016"],["Shanghai Shenhua","2016–2018"]]},
+ {n:"Wilfried Bony",pos:"DEL",r:70,c:[["Sparta Praga","2008–2010"],["Vitesse","2010–2013"],["Swansea","2013–2015"],["Manchester City","2015–2017"],["Stoke City","2016–2017",1],["Swansea","2017–2019"],["Al-Arabi","2019–2020"],["NEC Nijmegen","2020–2021"]]},
+ {n:"Gervinho",pos:"DEL",r:70,c:[["Beveren","2005–2007"],["Le Mans","2007–2009"],["Lille","2009–2011"],["Arsenal","2011–2013"],["Roma","2013–2016"],["Hebei China Fortune","2016–2018"],["Parma","2018–2021"],["Trabzonspor","2021–2022"],["Aris Salónica","2022–2023"]]},
+ {n:"Asamoah Gyan",pos:"DEL",r:68,c:[["Udinese","2003–2008"],["Modena","2004–2006",1],["Rennes","2008–2010"],["Sunderland","2010–2012"],["Al Ain","2011–2015"],["Shanghai SIPG","2015–2017"],["Kayserispor","2017–2019"],["NorthEast United","2019–2020"],["Legon Cities","2021–2022"]]},
+ {n:"Pablo Daniel Osvaldo",pos:"DEL",r:66,c:[["Huracán","2005–2006"],["Atalanta","2006–2008"],["Fiorentina","2008–2009"],["Bologna","2009–2010"],["Espanyol","2010–2011"],["Roma","2011–2013"],["Southampton","2013–2016"],["Juventus","2014",1],["Inter","2014–2015",1],["Boca Juniors","2015",1],["Porto","2016"],["Boca Juniors","2016"],["Banfield","2019–2020"]]},
+ {n:"Michu",pos:"DEL",r:70,c:[["Real Oviedo","2003–2007"],["Celta de Vigo","2007–2011"],["Rayo Vallecano","2011–2012"],["Swansea","2012–2015"],["Napoli","2014–2015",1],["UP Langreo","2015"],["Real Oviedo","2015–2017"]]},
+ {n:"Nicklas Bendtner",pos:"DEL",r:60,c:[["Arsenal","2005–2014"],["Birmingham City","2006–2007",1],["Sunderland","2011–2012",1],["Juventus","2012–2013",1],["Wolfsburgo","2014–2016"],["Nottingham Forest","2016–2017"],["Rosenborg","2017–2019"],["Copenhague","2019"]]},
+ {n:"Marouane Chamakh",pos:"DEL",r:62,c:[["Burdeos","2002–2010"],["Arsenal","2010–2013"],["West Ham","2013",1],["Crystal Palace","2013–2016"],["Cardiff City","2016–2017"]]},
+ {n:"Mido",pos:"DEL",r:58,c:[["Zamalek","1999–2000"],["Gent","2000–2001"],["Ajax","2001–2003"],["Celta de Vigo","2003",1],["Olympique de Marsella","2003–2004"],["Roma","2004–2005"],["Tottenham","2005–2007"],["Middlesbrough","2007–2010"],["Wigan","2009",1],["West Ham","2010",1],["Ajax","2011"],["Barnsley","2012–2013"]]},
+ {n:"Bebé",pos:"DEL",r:56,c:[["Estrela da Amadora","2009–2010"],["Vitória Guimarães","2010"],["Manchester United","2010–2014"],["Beşiktaş","2011",1],["Rio Ave","2012–2013",1],["Paços de Ferreira","2013–2014",1],["Benfica","2014–2016"],["Córdoba","2014–2015",1],["Eibar","2016–2019"],["Rayo Vallecano","2017–2018",1]]},
+ // ENTRENADORES (banquillos)
+ {n:"Arsène Wenger",pos:"DT",r:90,c:[["Nancy","1984–1987"],["Monaco","1987–1994"],["Nagoya Grampus","1995–1996"],["Arsenal","1996–2018"]]},
+ {n:"Zinedine Zidane",pos:"DT",r:90,c:[["Real Madrid Castilla","2014–2016"],["Real Madrid","2016–2018"],["Real Madrid","2019–2021"]]},
+ {n:"Antonio Conte",pos:"DT",r:89,c:[["Arezzo","2006–2007"],["Bari","2007–2009"],["Atalanta","2009–2010"],["Siena","2010–2011"],["Juventus","2011–2014"],["Selección de Italia","2014–2016"],["Chelsea","2016–2018"],["Inter","2019–2021"],["Tottenham","2021–2023"],["Napoli","2024–"]]},
+ {n:"Rafa Benítez",pos:"DT",r:85,c:[["Real Valladolid","1995–1996"],["Osasuna","1996–1997"],["Extremadura","1997–1999"],["Tenerife","2000–2001"],["Valencia","2001–2004"],["Liverpool","2004–2010"],["Inter","2010"],["Chelsea","2012–2013"],["Napoli","2013–2015"],["Real Madrid","2015–2016"],["Newcastle","2016–2019"],["Dalian Yifang","2019–2021"],["Everton","2021–2022"],["Celta de Vigo","2023–2024"]]},
+ {n:"Unai Emery",pos:"DT",r:86,c:[["Lorca","2004–2005"],["Almería","2006–2008"],["Valencia","2008–2012"],["Spartak Moscú","2012"],["Sevilla","2013–2016"],["Paris Saint-Germain","2016–2018"],["Arsenal","2018–2019"],["Villarreal","2020–2022"],["Aston Villa","2022–"]]},
+ {n:"Ronald Koeman",pos:"DT",r:79,c:[["Vitesse","2000–2001"],["Ajax","2001–2005"],["Benfica","2005–2006"],["PSV","2006–2007"],["Valencia","2007–2008"],["AZ","2009"],["Feyenoord","2011–2014"],["Southampton","2014–2016"],["Everton","2016–2017"],["Selección de Países Bajos","2018–2020"],["Barcelona","2020–2021"],["Selección de Países Bajos","2023–"]]},
+ {n:"Jorge Sampaoli",pos:"DT",r:74,c:[["Universidad de Chile","2011–2012"],["Selección de Chile","2012–2016"],["Sevilla","2016–2017"],["Selección de Argentina","2017–2018"],["Santos","2019"],["Atlético Mineiro","2020–2021"],["Olympique de Marsella","2021–2022"],["Sevilla","2022–2023"],["Flamengo","2023"],["Rennes","2024–2025"]]},
+ {n:"Gennaro Gattuso",pos:"DT",r:73,c:[["Sion","2013"],["Palermo","2013"],["OFI Creta","2013–2014"],["Pisa","2015–2017"],["Milan","2017–2019"],["Napoli","2019–2021"],["Valencia","2022–2023"],["Olympique de Marsella","2023–2024"],["Hajduk Split","2024–2025"],["Selección de Italia","2025–"]]},
+ {n:"Quique Setién",pos:"DT",r:70,c:[["Lugo","2009–2015"],["Las Palmas","2015–2017"],["Betis","2017–2019"],["Barcelona","2020"],["Villarreal","2022–2023"]]},
+ {n:"Frank de Boer",pos:"DT",r:64,c:[["Ajax","2010–2016"],["Inter","2016"],["Crystal Palace","2017"],["Atlanta United","2018–2020"],["Selección de Países Bajos","2020–2021"]]}
 ];
 
 // ---------- Utilidades ----------
@@ -387,7 +498,10 @@ const save = () => {
 const load = () => { try{ return JSON.parse(localStorage.getItem("subasta-v4")||"null"); }catch(e){ return null; } };
 
 let S = null, timer = null, paused = false;
-let names = ["Ana","Leo","Mario"], laps = 2;
+let names = ["Ana","Leo","Mario"], laps = 2, mode = "pistas";
+const MODES = {pistas:"Pistas", tray:"Trayectoria"};
+const inMode = (p,md) => md==="tray" ? !!p.c : !!p.p;
+const modeSeg = (cur,id) => `<div class="seg" id="${id}">${Object.entries(MODES).map(([k,v])=>`<button data-mode="${k}" aria-pressed="${cur===k}">${v} · ${POOL.filter(p=>inMode(p,k)).length} jugadores</button>`).join("")}</div>`;
 const DEFAULT_NAMES = ["Ana","Leo","Mario","Sofía"];
 let saved = load();
 if(saved && saved.names) names = saved.names;
@@ -448,12 +562,14 @@ function peerRoom(code){
 }
 
 const POSL = ["POR","DEF","MED","DEL","DT"];
-const NAME_IDX = Object.fromEntries(POOL.map((p,i)=>[p.n,i]));
-const pidx = x => NAME_IDX[x.n] ?? (-1 - Math.max(0,POSL.indexOf(x.pos)));
+const NAME_IDX = Object.fromEntries(POOL.map((p,i)=>[p.n+"|"+p.pos,i]));
+// goleadores y crónica: solo jugadores de campo, que no se repiten entre modos
+const GOAL_IDX = Object.fromEntries(POOL.map((p,i)=>[p.n,i]).filter(([n,i])=>POOL[i].pos!=="DT"));
+const pidx = x => NAME_IDX[x.n+"|"+x.pos] ?? (-1 - Math.max(0,POSL.indexOf(x.pos)));
 const fromIdx = (i,price) => i>=0 ? {n:POOL[i].n,pos:POOL[i].pos,r:POOL[i].r,price} : {n:POSL[-1-i]==="DT"?"Segundo entrenador":"Canterano",pos:POSL[-1-i],r:62,price};
-const gpack = g => [g.m, NAME_IDX[g.n] ?? -1];
+const gpack = g => [g.m, GOAL_IDX[g.n] ?? -1];
 const gunpack = ([m,i]) => ({m, n: i>=0 ? POOL[i].n : "Canterano"});
-const resPack = r => r && {...r, sh:r.sh.map(gpack), sa:r.sa.map(gpack), tl:r.tl&&r.tl.map(e=>[e[0],e[1],e[2],NAME_IDX[e[3]]??-1])};
+const resPack = r => r && {...r, sh:r.sh.map(gpack), sa:r.sa.map(gpack), tl:r.tl&&r.tl.map(e=>[e[0],e[1],e[2],GOAL_IDX[e[3]]??-1])};
 const resUnpack = r => r && {...r, sh:r.sh.map(gunpack), sa:r.sa.map(gunpack), tl:r.tl&&r.tl.map(e=>[e[0],e[1],e[2],e[3]>=0?POOL[e[3]].n:"Canterano"])};
 function pack(){
   const o={...S, deck:undefined, dl:S.deck?S.deck.length:0, pz:paused, seq:NET.seq};
@@ -540,7 +656,7 @@ async function hostGame(name, resume){
   NET.room.on("hello",onHello); NET.room.on("act",onAct);
   clearInterval(hbtimer); hbtimer=setInterval(broadcast,2500);
   if(resume){ S=resume; return route(); }
-  S={phase:"lobby", code, seats:[{peer:null,name:cleanName(name),host:true}], names:[cleanName(name)], laps};
+  S={phase:"lobby", code, seats:[{peer:null,name:cleanName(name),host:true}], names:[cleanName(name)], laps, mode};
   save(); renderLobby();
 }
 async function joinGame(code,name){
@@ -584,16 +700,18 @@ function renderLobby(){
   stop();
   const seats=S.seats, isHost=NET.role==="host";
   app.innerHTML=`
-  <header class="hero"><span class="label">Sala de espera</span><h1>Código <span class="mono">${esc(S.code)}</span></h1>
+  <header class="hero"><span class="label">Sala de espera · modo ${MODES[S.mode||"pistas"]}</span><h1>Código <span class="mono">${esc(S.code)}</span></h1>
     <p>Pasa este código a tus amigos (de 2 a 4 mánagers). Solo tienen que abrir este mismo enlace, escribir el código y pulsar <b>Unirse</b>.</p></header>
   <section class="teams">${[0,1,2,3].map(i=>`<div class="team" style="--c:${COLORS[i]}"><div class="top"><span class="nm">${seats[i]?esc(seats[i].name):"Libre"}</span><span class="note">${seats[i]?(seats[i].host?"Anfitrión":"Listo"):"Esperando…"}</span></div><span class="note">Mánager ${i+1}</span></div>`).join("")}</section>
   ${isHost?`<div class="box"><span class="label">Liga</span>
       <div class="seg" id="laps"><button data-l="2" aria-pressed="${S.laps===2}">Ida y vuelta</button><button data-l="4" aria-pressed="${S.laps===4}">Doble vuelta</button></div>
+      <span class="label">Modo de juego</span>${modeSeg(S.mode||"pistas","modes")}
       <div class="row"><button class="btn amber" id="gostart" ${seats.length<MINP?"disabled":""}>Empezar subasta</button><span class="note">${seats.length<MINP?"Hace falta al menos otro mánager":`Sois ${seats.length}. ${seats.length<MAXP?"Se puede seguir uniendo gente, también con la subasta empezada.":"Sala completa."}`}</span></div></div>`
     :`<p class="note">Esperando a que el anfitrión empiece la subasta.</p>`}`;
   if(isHost){
     app.querySelectorAll("#laps button").forEach(b=>b.onclick=()=>{S.laps=+b.dataset.l;save();renderLobby()});
-    document.getElementById("gostart").onclick=()=>{ names=S.seats.map(s=>s.name); laps=S.laps; startAuction(); };
+    app.querySelectorAll("#modes button").forEach(b=>b.onclick=()=>{S.mode=b.dataset.mode;save();renderLobby()});
+    document.getElementById("gostart").onclick=()=>{ names=S.seats.map(s=>s.name); laps=S.laps; mode=S.mode||"pistas"; startAuction(); };
   }
 }
 
@@ -608,6 +726,11 @@ function renderSetup(){
     <p>Sale a subasta un futbolista misterioso. Solo sabéis su posición y unas pistas que se van destapando. Pujad sin saber quién es, montad un once con entrenador y que decida la liga.</p>
   </header>
   ${resumable?`<div class="box" style="flex-direction:row;justify-content:space-between;align-items:center;flex-wrap:wrap"><span>Hay una partida ${saved.code?"online ":""}a medias guardada en este navegador.</span><button class="btn amber" id="resume">Continuar partida</button></div>`:""}
+  <section class="box">
+    <span class="label">Modo de juego</span>
+    ${modeSeg(mode,"modes")}
+    <p class="note" style="margin:0">${mode==="tray"?"En cada lote se va desvelando el recorrido de clubes del jugador, club a club. Jugadores distintos al modo Pistas y más trolls.":"En cada lote se van desvelando pistas sobre la vida del jugador."}</p>
+  </section>
   <section class="box">
     <span class="label">Jugar online · cada uno desde su casa</span>
     ${ROOM?`<div class="online-grid">
@@ -640,6 +763,7 @@ function renderSetup(){
       <ul class="rules">
         <li>Cada mánager tiene <b>${BUDGET} M</b> para fichar <b>${SQUAD}</b>: once titular en 4-3-3 y un <b>entrenador</b>.</li>
         <li class="formation">1 POR · 4 DEF · 3 MED · 3 DEL · 1 DT</li>
+        <li>En el modo <b>Trayectoria</b>, en vez de pistas se desvela el recorrido de clubes del jugador por tramos (o los banquillos, si es entrenador).</li>
         <li>Cada lote empieza con una pista. Mientras nadie puja, una barra va bajando y cada ${CLUE_T} s se destapa otra, hasta cuatro. En cuanto alguien puja, se acaban las pistas nuevas.</li>
         <li>Cada lote tiene un <b>precio de salida</b> al azar, de 10 a 75 M. No tiene nada que ver con lo bueno que sea el jugador.</li>
         <li>La primera puja paga la salida (o salida +20 / +50 / +100). Después se sube de <b>+10, +20, +50 o +100 M</b>, con los botones o las teclas.</li>
@@ -655,10 +779,11 @@ function renderSetup(){
         <li>Si dos equipos acaban empatados a puntos, el título se decide en un <b>partido de desempate</b> con prórroga y penaltis.</li>
       </ul>
       <button class="btn amber" id="start">Empezar subasta</button>
-      <p class="note">${POOL.length} lotes: ${Object.keys(SLOTS).map(k=>POOL.filter(p=>p.pos===k).length+" "+k).join(" · ")}.</p>
+      <p class="note">${MODES[mode]}: ${Object.keys(SLOTS).map(k=>POOL.filter(p=>inMode(p,mode)&&p.pos===k).length+" "+k).join(" · ")}.</p>
     </div>
   </section>`;
   app.querySelectorAll("#laps button").forEach(b=>b.onclick=()=>{readNames();laps=+b.dataset.l;renderSetup()});
+  app.querySelectorAll("#modes button").forEach(b=>b.onclick=()=>{readNames();mode=b.dataset.mode;renderSetup()});
   app.querySelectorAll("#np button").forEach(b=>b.onclick=()=>{ readNames(); const n=+b.dataset.n; names=Array.from({length:n},(_,i)=>names[i]||DEFAULT_NAMES[i]); renderSetup(); });
   document.getElementById("start").onclick=()=>{readNames();startAuction()};
   const r=document.getElementById("resume"); if(r) r.onclick=()=>{ if(saved.code&&ROOM) return hostGame(saved.seats[0].name,saved); S=saved; route(); };
@@ -691,7 +816,7 @@ function readNames(){ names=names.map((_,i)=>{ const el=document.getElementById(
 const SKIPS = 3, SKIPKEYS = ["t","b","p","5"];
 function startAuction(){
   const online = NET.role==="host" ? {code:S.code, seats:S.seats} : {};
-  S = {phase:"auction", names, laps, m:names.map(()=>({budget:BUDGET, roster:[], skips:SKIPS})), deck:shuffle(POOL.map((_,i)=>i)), di:-1, lot:null, sales:0, ...online};
+  S = {phase:"auction", names, laps, m:names.map(()=>({budget:BUDGET, roster:[], skips:SKIPS})), mode, deck:shuffle(POOL.map((_,i)=>i).filter(i=>inMode(POOL[i],mode))), di:-1, lot:null, sales:0, ...online};
   nextLot();
 }
 const count = (m,pos) => m.roster.filter(x=>x.pos===pos).length;
@@ -975,7 +1100,12 @@ function soldLabel(L){
 function renderAuction(fresh=false, newClue=false){
   const L=S.lot, p=POOL[L.pi];
   const left=S.deck.length-S.di-1;
-  const clueHTML=p.p.map((c,i)=>i<L.clues
+  const shown=p.c?Math.ceil(p.c.length*L.clues/4):0, before=p.c?Math.ceil(p.c.length*(L.clues-1)/4):0;
+  const clueHTML=p.c
+    ? `<div class="career">${p.c.map((c,i)=>i<shown
+        ? `<div class="club ${c[2]?"loan":""} ${(fresh&&i<shown)||(newClue&&i>=before)?"new":""}">${c[2]?'<span class="tag">Cedido</span>':""}<span class="yrs">${c[1]}</span><span class="cn">${esc(c[0])}</span></div>`
+        : `<div class="club hidden"><span class="yrs">????</span><span class="cn">?</span></div>`).join("")}</div>`
+    : p.p.map((c,i)=>i<L.clues
     ? `<li class="${(fresh&&i===0)||(newClue&&i===L.clues-1)?"new":""}">${esc(c)}</li>`
     : `<li class="hidden">Pista oculta</li>`).join("");
   const soldHTML=L.sold?`<div class="reveal">
@@ -995,8 +1125,8 @@ function renderAuction(fresh=false, newClue=false){
       ${stampHTML}
       ${evBox}
       <div class="hd"><span class="pos">${POS_NAME[p.pos]}</span><span class="count">Lote ${S.di+1} · quedan ${left}${(S.discards||[]).length?` · descartes: ${S.discards.length}`:""}</span></div>
-      <h2>${p.pos==="DT"?"¿Quién es este entrenador?":"¿Quién es este jugador?"}</h2>
-      <ol class="clues">${clueHTML}</ol>
+      <h2>${p.pos==="DT"?"¿Quién es este entrenador?":"¿Quién es este jugador?"}</h2>${p.c?`<span class="note" style="color:#3c5a4b">${p.pos==="DT"?"Banquillos que ha dirigido":"Recorrido de clubes"} · ${p.c.length} etapas</span>`:""}
+      ${p.c?clueHTML:`<ol class="clues">${clueHTML}</ol>`}
       ${peekHTML}
       ${soldHTML}
     </article>
@@ -1234,7 +1364,7 @@ function renderLeague(){
   if($("again")) $("again").onclick=()=>{
     if(NET.role==="client") return leaveOnline();
     try{localStorage.removeItem("subasta-v4")}catch(e){} saved=null;
-    if(NET.role==="host"){ S={phase:"lobby",code:S.code,seats:S.seats,names:S.seats.map(s=>s.name),laps:S.laps}; save(); return renderLobby(); }
+    if(NET.role==="host"){ S={phase:"lobby",code:S.code,seats:S.seats,names:S.seats.map(s=>s.name),laps:S.laps,mode:S.mode}; save(); return renderLobby(); }
     S=null; renderSetup();
   };
   react();
