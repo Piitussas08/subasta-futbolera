@@ -79,6 +79,12 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 .pos{font-family:var(--f-display);font-weight:900;font-size:1.1rem;letter-spacing:.06em;text-transform:uppercase;background:#0f2219;color:var(--chalk);padding:4px 10px;border-radius:4px}
 .lot .count{font-family:var(--f-mono);font-size:.8rem;color:#3c5a4b}
 .lot h2{font-size:clamp(2rem,5vw,3rem);font-weight:900}
+.siluwrap{display:grid;grid-template-columns:minmax(120px,190px) 1fr;gap:16px;align-items:center}
+.silu{width:100%;height:auto;max-height:300px;background:linear-gradient(#dfe8e2,#cfdcd4);border-radius:8px}
+.silufacts{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px;font-size:1.02rem}
+.silufacts b{font-family:var(--f-display);text-transform:uppercase;letter-spacing:.04em;margin-right:6px}
+.silufacts li.hidden{color:#7d958a;font-style:italic}
+@media (max-width:480px){.siluwrap{grid-template-columns:1fr}.silu{max-width:200px;margin:0 auto}}
 .career{display:flex;flex-wrap:wrap;gap:8px}
 .club{position:relative;background:#0f2219;color:var(--chalk);border-radius:6px;padding:9px 12px;flex:1 1 130px;max-width:210px;display:flex;flex-direction:column;gap:4px;min-width:0}
 .club .yrs{font-family:var(--f-mono);font-size:.78rem;color:var(--muted);font-variant-numeric:tabular-nums}
@@ -481,7 +487,106 @@ const POOL = [
  {n:"Jorge Sampaoli",pos:"DT",r:74,c:[["Universidad de Chile","2011–2012"],["Selección de Chile","2012–2016"],["Sevilla","2016–2017"],["Selección de Argentina","2017–2018"],["Santos","2019"],["Atlético Mineiro","2020–2021"],["Olympique de Marsella","2021–2022"],["Sevilla","2022–2023"],["Flamengo","2023"],["Rennes","2024–2025"]]},
  {n:"Gennaro Gattuso",pos:"DT",r:73,c:[["Sion","2013"],["Palermo","2013"],["OFI Creta","2013–2014"],["Pisa","2015–2017"],["Milan","2017–2019"],["Napoli","2019–2021"],["Valencia","2022–2023"],["Olympique de Marsella","2023–2024"],["Hajduk Split","2024–2025"],["Selección de Italia","2025–"]]},
  {n:"Quique Setién",pos:"DT",r:70,c:[["Lugo","2009–2015"],["Las Palmas","2015–2017"],["Betis","2017–2019"],["Barcelona","2020"],["Villarreal","2022–2023"]]},
- {n:"Frank de Boer",pos:"DT",r:64,c:[["Ajax","2010–2016"],["Inter","2016"],["Crystal Palace","2017"],["Atlanta United","2018–2020"],["Selección de Países Bajos","2020–2021"]]}
+ {n:"Frank de Boer",pos:"DT",r:64,c:[["Ajax","2010–2016"],["Inter","2016"],["Crystal Palace","2017"],["Atlanta United","2018–2020"],["Selección de Países Bajos","2020–2021"]]},
+ // ===== MODO SILUETAS: s = {h: altura cm, b: complexión, hair, beard 0-2, num: dorsal más conocido, foot, nat, acc?} =====
+ {n:"Fabien Barthez",pos:"POR",r:86,s:{h:180,b:"normal",hair:"calvo",beard:0,num:16,foot:"der",nat:"Francia"}},
+ {n:"Gianluigi Donnarumma",pos:"POR",r:89,s:{h:196,b:"fuerte",hair:"corto",beard:0,num:99,foot:"der",nat:"Italia"}},
+ {n:"Edwin van der Sar",pos:"POR",r:88,s:{h:197,b:"fino",hair:"corto",beard:0,num:1,foot:"der",nat:"Países Bajos"}},
+ {n:"Peter Schmeichel",pos:"POR",r:89,s:{h:191,b:"fuerte",hair:"corto",beard:0,num:1,foot:"der",nat:"Dinamarca"}},
+ {n:"Alisson Becker",pos:"POR",r:89,s:{h:193,b:"fuerte",hair:"corto",beard:2,num:1,foot:"der",nat:"Brasil"}},
+ {n:"Ederson",pos:"POR",r:88,s:{h:188,b:"fuerte",hair:"rapado",beard:1,num:31,foot:"izq",nat:"Brasil"}},
+ {n:"Marc-André ter Stegen",pos:"POR",r:88,s:{h:187,b:"normal",hair:"corto",beard:1,num:1,foot:"der",nat:"Alemania"}},
+ {n:"René Higuita",pos:"POR",r:72,s:{h:175,b:"normal",hair:"rizos",beard:1,num:1,foot:"der",nat:"Colombia"}},
+ {n:"Jorge Campos",pos:"POR",r:70,s:{h:168,b:"fino",hair:"largo",beard:0,num:1,foot:"der",nat:"México"}},
+ // DEFENSAS
+ {n:"Kalidou Koulibaly",pos:"DEF",r:86,s:{h:187,b:"fuerte",hair:"rapado",beard:1,num:26,foot:"der",nat:"Senegal"}},
+ {n:"Marquinhos",pos:"DEF",r:86,s:{h:183,b:"normal",hair:"corto",beard:1,num:5,foot:"der",nat:"Brasil"}},
+ {n:"Rúben Dias",pos:"DEF",r:88,s:{h:187,b:"fuerte",hair:"corto",beard:2,num:3,foot:"der",nat:"Portugal"}},
+ {n:"Antonio Rüdiger",pos:"DEF",r:86,s:{h:190,b:"fuerte",hair:"rapado",beard:1,num:22,foot:"der",nat:"Alemania"}},
+ {n:"Jules Koundé",pos:"DEF",r:85,s:{h:180,b:"normal",hair:"rizos",beard:1,num:23,foot:"der",nat:"Francia"}},
+ {n:"Theo Hernández",pos:"DEF",r:85,s:{h:184,b:"fuerte",hair:"coleta",beard:2,num:19,foot:"izq",nat:"Francia"}},
+ {n:"Andy Robertson",pos:"DEF",r:85,s:{h:178,b:"normal",hair:"corto",beard:2,num:26,foot:"izq",nat:"Escocia"}},
+ {n:"Trent Alexander-Arnold",pos:"DEF",r:85,s:{h:180,b:"normal",hair:"corto",beard:0,num:66,foot:"der",nat:"Inglaterra"}},
+ {n:"Alphonso Davies",pos:"DEF",r:83,s:{h:183,b:"fino",hair:"rapado",beard:0,num:19,foot:"izq",nat:"Canadá"}},
+ {n:"David Alaba",pos:"DEF",r:85,s:{h:180,b:"normal",hair:"rapado",beard:1,num:4,foot:"izq",nat:"Austria"}},
+ {n:"Ronald Araújo",pos:"DEF",r:84,s:{h:188,b:"fuerte",hair:"corto",beard:0,num:4,foot:"der",nat:"Uruguay"}},
+ {n:"Lilian Thuram",pos:"DEF",r:88,s:{h:185,b:"fuerte",hair:"rapado",beard:0,num:15,foot:"der",nat:"Francia"}},
+ {n:"Fernando Hierro",pos:"DEF",r:88,s:{h:187,b:"normal",hair:"corto",beard:0,num:4,foot:"der",nat:"España"}},
+ {n:"Jaap Stam",pos:"DEF",r:87,s:{h:191,b:"fuerte",hair:"calvo",beard:0,num:6,foot:"der",nat:"Países Bajos"}},
+ {n:"Patrice Evra",pos:"DEF",r:84,s:{h:173,b:"normal",hair:"rapado",beard:0,num:3,foot:"izq",nat:"Francia"}},
+ {n:"Jamie Carragher",pos:"DEF",r:84,s:{h:185,b:"normal",hair:"corto",beard:0,num:23,foot:"der",nat:"Inglaterra"}},
+ {n:"Diego Godín",pos:"DEF",r:86,s:{h:187,b:"normal",hair:"corto",beard:1,num:2,foot:"der",nat:"Uruguay"}},
+ {n:"Dani Carvajal",pos:"DEF",r:85,s:{h:173,b:"normal",hair:"corto",beard:2,num:2,foot:"der",nat:"España"}},
+ {n:"Lúcio",pos:"DEF",r:86,s:{h:188,b:"fuerte",hair:"rapado",beard:0,num:3,foot:"der",nat:"Brasil"}},
+ {n:"Martin Škrtel",pos:"DEF",r:76,s:{h:191,b:"fuerte",hair:"calvo",beard:1,num:37,foot:"der",nat:"Eslovaquia"}},
+ {n:"Taribo West",pos:"DEF",r:64,s:{h:186,b:"fuerte",hair:"rastas",beard:0,num:null,foot:"izq",nat:"Nigeria"}},
+ {n:"Abel Xavier",pos:"DEF",r:62,s:{h:186,b:"normal",hair:"corto",beard:2,num:null,foot:"der",nat:"Portugal"}},
+ // CENTROCAMPISTAS
+ {n:"Carlos Valderrama",pos:"MED",r:86,s:{h:176,b:"fino",hair:"afro",beard:2,num:10,foot:"der",nat:"Colombia"}},
+ {n:"Marouane Fellaini",pos:"MED",r:70,s:{h:194,b:"fuerte",hair:"afro",beard:1,num:27,foot:"der",nat:"Bélgica"}},
+ {n:"Jude Bellingham",pos:"MED",r:90,s:{h:186,b:"normal",hair:"corto",beard:0,num:5,foot:"der",nat:"Inglaterra"}},
+ {n:"Pedri",pos:"MED",r:88,s:{h:174,b:"fino",hair:"corto",beard:0,num:8,foot:"der",nat:"España"}},
+ {n:"Gavi",pos:"MED",r:84,s:{h:173,b:"fino",hair:"corto",beard:0,num:6,foot:"der",nat:"España"}},
+ {n:"Rodri",pos:"MED",r:91,s:{h:191,b:"normal",hair:"corto",beard:1,num:16,foot:"der",nat:"España"}},
+ {n:"Frenkie de Jong",pos:"MED",r:86,s:{h:181,b:"fino",hair:"corto",beard:0,num:21,foot:"der",nat:"Países Bajos"}},
+ {n:"Joshua Kimmich",pos:"MED",r:87,s:{h:177,b:"normal",hair:"corto",beard:0,num:6,foot:"der",nat:"Alemania"}},
+ {n:"Casemiro",pos:"MED",r:86,s:{h:185,b:"fuerte",hair:"rapado",beard:1,num:14,foot:"der",nat:"Brasil"}},
+ {n:"Paul Scholes",pos:"MED",r:88,s:{h:170,b:"normal",hair:"corto",beard:0,num:18,foot:"der",nat:"Inglaterra"}},
+ {n:"Roy Keane",pos:"MED",r:88,s:{h:178,b:"normal",hair:"corto",beard:2,num:16,foot:"der",nat:"Irlanda"}},
+ {n:"Patrick Vieira",pos:"MED",r:89,s:{h:193,b:"fino",hair:"rapado",beard:0,num:4,foot:"der",nat:"Francia"}},
+ {n:"Edgar Davids",pos:"MED",r:86,s:{h:169,b:"fuerte",hair:"rastas",beard:0,num:26,foot:"der",nat:"Países Bajos",acc:"gafas"}},
+ {n:"Arturo Vidal",pos:"MED",r:85,s:{h:180,b:"fuerte",hair:"cresta",beard:1,num:23,foot:"der",nat:"Chile"}},
+ {n:"Marek Hamšík",pos:"MED",r:84,s:{h:183,b:"normal",hair:"cresta",beard:0,num:17,foot:"der",nat:"Eslovaquia"}},
+ {n:"Radja Nainggolan",pos:"MED",r:82,s:{h:176,b:"fuerte",hair:"cresta",beard:2,num:4,foot:"der",nat:"Bélgica"}},
+ {n:"İlkay Gündoğan",pos:"MED",r:86,s:{h:180,b:"normal",hair:"corto",beard:2,num:8,foot:"der",nat:"Alemania"}},
+ {n:"Bernardo Silva",pos:"MED",r:87,s:{h:173,b:"fino",hair:"corto",beard:1,num:20,foot:"izq",nat:"Portugal"}},
+ {n:"Martin Ødegaard",pos:"MED",r:87,s:{h:178,b:"fino",hair:"corto",beard:0,num:8,foot:"izq",nat:"Noruega"}},
+ {n:"Isco",pos:"MED",r:84,s:{h:176,b:"normal",hair:"corto",beard:2,num:22,foot:"der",nat:"España"}},
+ {n:"Santi Cazorla",pos:"MED",r:84,s:{h:168,b:"fino",hair:"corto",beard:0,num:19,foot:"ambas",nat:"España"}},
+ {n:"Jesse Lingard",pos:"MED",r:64,s:{h:175,b:"normal",hair:"corto",beard:1,num:14,foot:"der",nat:"Inglaterra"}},
+ {n:"Fred",pos:"MED",r:68,s:{h:169,b:"normal",hair:"corto",beard:1,num:17,foot:"izq",nat:"Brasil"}},
+ // DELANTEROS
+ {n:"Harry Kane",pos:"DEL",r:91,s:{h:188,b:"fuerte",hair:"corto",beard:0,num:9,foot:"der",nat:"Inglaterra"}},
+ {n:"Mohamed Salah",pos:"DEL",r:91,s:{h:175,b:"fino",hair:"rizos",beard:2,num:11,foot:"izq",nat:"Egipto"}},
+ {n:"Sadio Mané",pos:"DEL",r:86,s:{h:174,b:"normal",hair:"rapado",beard:1,num:10,foot:"der",nat:"Senegal"}},
+ {n:"Vinícius Júnior",pos:"DEL",r:91,s:{h:176,b:"fino",hair:"rizos",beard:0,num:7,foot:"der",nat:"Brasil"}},
+ {n:"Lamine Yamal",pos:"DEL",r:88,s:{h:180,b:"fino",hair:"rizos",beard:0,num:19,foot:"izq",nat:"España"}},
+ {n:"Andriy Shevchenko",pos:"DEL",r:90,s:{h:183,b:"normal",hair:"corto",beard:0,num:7,foot:"der",nat:"Ucrania"}},
+ {n:"Filippo Inzaghi",pos:"DEL",r:86,s:{h:181,b:"fino",hair:"corto",beard:0,num:9,foot:"der",nat:"Italia"}},
+ {n:"Alessandro Del Piero",pos:"DEL",r:90,s:{h:174,b:"normal",hair:"corto",beard:0,num:10,foot:"der",nat:"Italia"}},
+ {n:"Francesco Totti",pos:"DEL",r:90,s:{h:180,b:"normal",hair:"corto",beard:0,num:10,foot:"der",nat:"Italia"}},
+ {n:"Roberto Baggio",pos:"DEL",r:91,s:{h:174,b:"fino",hair:"coleta",beard:1,num:10,foot:"der",nat:"Italia"}},
+ {n:"Hernán Crespo",pos:"DEL",r:86,s:{h:184,b:"normal",hair:"corto",beard:0,num:9,foot:"der",nat:"Argentina"}},
+ {n:"Christian Vieri",pos:"DEL",r:87,s:{h:185,b:"fuerte",hair:"corto",beard:1,num:32,foot:"izq",nat:"Italia"}},
+ {n:"Eric Cantona",pos:"DEL",r:88,s:{h:188,b:"fuerte",hair:"corto",beard:0,num:7,foot:"der",nat:"Francia",acc:"cuello"}},
+ {n:"Dennis Bergkamp",pos:"DEL",r:89,s:{h:188,b:"fino",hair:"corto",beard:0,num:10,foot:"der",nat:"Países Bajos"}},
+ {n:"Hristo Stoichkov",pos:"DEL",r:89,s:{h:178,b:"normal",hair:"corto",beard:0,num:8,foot:"izq",nat:"Bulgaria"}},
+ {n:"Marco van Basten",pos:"DEL",r:91,s:{h:188,b:"normal",hair:"corto",beard:0,num:9,foot:"der",nat:"Países Bajos"}},
+ {n:"Ruud Gullit",pos:"DEL",r:90,s:{h:191,b:"fuerte",hair:"rastas",beard:1,num:10,foot:"der",nat:"Países Bajos"}},
+ {n:"George Weah",pos:"DEL",r:89,s:{h:184,b:"fuerte",hair:"rapado",beard:0,num:9,foot:"der",nat:"Liberia"}},
+ {n:"Jürgen Klinsmann",pos:"DEL",r:87,s:{h:181,b:"normal",hair:"corto",beard:0,num:18,foot:"der",nat:"Alemania"}},
+ {n:"Miroslav Klose",pos:"DEL",r:87,s:{h:182,b:"normal",hair:"corto",beard:0,num:11,foot:"der",nat:"Alemania"}},
+ {n:"Alan Shearer",pos:"DEL",r:89,s:{h:183,b:"fuerte",hair:"corto",beard:0,num:9,foot:"der",nat:"Inglaterra"}},
+ {n:"Diego Costa",pos:"DEL",r:84,s:{h:188,b:"fuerte",hair:"corto",beard:1,num:19,foot:"der",nat:"España"}},
+ {n:"Sergio Agüero",pos:"DEL",r:89,s:{h:173,b:"fuerte",hair:"corto",beard:0,num:10,foot:"der",nat:"Argentina"}},
+ {n:"Ousmane Dembélé",pos:"DEL",r:89,s:{h:178,b:"fino",hair:"corto",beard:0,num:10,foot:"ambas",nat:"Francia"}},
+ {n:"Paulo Dybala",pos:"DEL",r:86,s:{h:177,b:"fino",hair:"corto",beard:1,num:10,foot:"izq",nat:"Argentina"}},
+ {n:"Lautaro Martínez",pos:"DEL",r:88,s:{h:174,b:"fuerte",hair:"corto",beard:2,num:10,foot:"der",nat:"Argentina"}},
+ {n:"Pierre-Emerick Aubameyang",pos:"DEL",r:84,s:{h:187,b:"fino",hair:"corto",beard:1,num:14,foot:"der",nat:"Gabón"}},
+ {n:"Djibril Cissé",pos:"DEL",r:70,s:{h:182,b:"fuerte",hair:"rapado",beard:1,num:9,foot:"der",nat:"Francia"}},
+ {n:"Peter Crouch",pos:"DEL",r:72,s:{h:201,b:"fino",hair:"corto",beard:0,num:21,foot:"der",nat:"Inglaterra"}},
+ {n:"Wout Weghorst",pos:"DEL",r:62,s:{h:197,b:"fuerte",hair:"corto",beard:0,num:27,foot:"der",nat:"Países Bajos"}},
+ {n:"Odion Ighalo",pos:"DEL",r:60,s:{h:188,b:"normal",hair:"rapado",beard:1,num:25,foot:"der",nat:"Nigeria"}},
+ // ENTRENADORES
+ {n:"Johan Cruyff",pos:"DT",r:93,s:{h:178,b:"fino",hair:"corto",beard:0,nat:"Países Bajos"}},
+ {n:"Marcello Lippi",pos:"DT",r:88,s:{h:180,b:"normal",hair:"corto",beard:0,nat:"Italia",acc:"puro"}},
+ {n:"Louis van Gaal",pos:"DT",r:83,s:{h:185,b:"fuerte",hair:"calvo",beard:0,nat:"Países Bajos",acc:"libreta"}},
+ {n:"Mauricio Pochettino",pos:"DT",r:83,s:{h:180,b:"normal",hair:"corto",beard:1,nat:"Argentina"}},
+ {n:"Thomas Tuchel",pos:"DT",r:86,s:{h:192,b:"fino",hair:"corto",beard:1,nat:"Alemania"}},
+ {n:"Julian Nagelsmann",pos:"DT",r:84,s:{h:190,b:"fino",hair:"corto",beard:0,nat:"Alemania"}},
+ {n:"Mikel Arteta",pos:"DT",r:87,s:{h:176,b:"normal",hair:"rapado",beard:1,nat:"España"}},
+ {n:"Hansi Flick",pos:"DT",r:88,s:{h:180,b:"normal",hair:"calvo",beard:0,nat:"Alemania"}},
+ {n:"Claudio Ranieri",pos:"DT",r:80,s:{h:175,b:"normal",hair:"corto",beard:0,nat:"Italia",acc:"gafas"}}
 ];
 
 // ---------- Utilidades ----------
@@ -499,8 +604,8 @@ const load = () => { try{ return JSON.parse(localStorage.getItem("subasta-v4")||
 
 let S = null, timer = null, paused = false;
 let names = ["Ana","Leo","Mario"], laps = 2, mode = "pistas";
-const MODES = {pistas:"Pistas", tray:"Trayectoria"};
-const inMode = (p,md) => md==="tray" ? !!p.c : !!p.p;
+const MODES = {pistas:"Pistas", tray:"Trayectoria", silu:"Siluetas"};
+const inMode = (p,md) => md==="silu" ? !!p.s : md==="tray" ? !!p.c : !!p.p;
 const modeSeg = (cur,id) => `<div class="seg" id="${id}">${Object.entries(MODES).map(([k,v])=>`<button data-mode="${k}" aria-pressed="${cur===k}">${v} · ${POOL.filter(p=>inMode(p,k)).length} jugadores</button>`).join("")}</div>`;
 const DEFAULT_NAMES = ["Ana","Leo","Mario","Sofía"];
 let saved = load();
@@ -729,7 +834,7 @@ function renderSetup(){
   <section class="box">
     <span class="label">Modo de juego</span>
     ${modeSeg(mode,"modes")}
-    <p class="note" style="margin:0">${mode==="tray"?"En cada lote se va desvelando el recorrido de clubes del jugador, club a club. Jugadores distintos al modo Pistas y más trolls.":"En cada lote se van desvelando pistas sobre la vida del jugador."}</p>
+    <p class="note" style="margin:0">${{tray:"En cada lote se va desvelando el recorrido de clubes del jugador, club a club. Jugadores distintos al modo Pistas y más trolls.",silu:"En cada lote se va dibujando la silueta del jugador: cuerpo y altura, peinado, dorsal y pierna buena, y al final el país. Jugadores distintos a los otros modos.",pistas:"En cada lote se van desvelando pistas sobre la vida del jugador."}[mode]}</p>
   </section>
   <section class="box">
     <span class="label">Jugar online · cada uno desde su casa</span>
@@ -763,6 +868,7 @@ function renderSetup(){
       <ul class="rules">
         <li>Cada mánager tiene <b>${BUDGET} M</b> para fichar <b>${SQUAD}</b>: once titular en 4-3-3 y un <b>entrenador</b>.</li>
         <li class="formation">1 POR · 4 DEF · 3 MED · 3 DEL · 1 DT</li>
+        <li>En el modo <b>Siluetas</b> se va dibujando la silueta del jugador: primero el cuerpo y la altura, luego el peinado, el dorsal y la pierna buena, y al final el país.</li>
         <li>En el modo <b>Trayectoria</b>, en vez de pistas se desvela el recorrido de clubes del jugador por tramos (o los banquillos, si es entrenador).</li>
         <li>Cada lote empieza con una pista. Mientras nadie puja, una barra va bajando y cada ${CLUE_T} s se destapa otra, hasta cuatro. En cuanto alguien puja, se acaban las pistas nuevas.</li>
         <li>Cada lote tiene un <b>precio de salida</b> al azar, de 10 a 75 M. No tiene nada que ver con lo bueno que sea el jugador.</li>
@@ -1101,7 +1207,7 @@ function renderAuction(fresh=false, newClue=false){
   const L=S.lot, p=POOL[L.pi];
   const left=S.deck.length-S.di-1;
   const shown=p.c?Math.ceil(p.c.length*L.clues/4):0, before=p.c?Math.ceil(p.c.length*(L.clues-1)/4):0;
-  const clueHTML=p.c
+  const clueHTML=p.s ? siluHTML(p,L.clues) : p.c
     ? `<div class="career">${p.c.map((c,i)=>i<shown
         ? `<div class="club ${c[2]?"loan":""} ${(fresh&&i<shown)||(newClue&&i>=before)?"new":""}">${c[2]?'<span class="tag">Cedido</span>':""}<span class="yrs">${c[1]}</span><span class="cn">${esc(c[0])}</span></div>`
         : `<div class="club hidden"><span class="yrs">????</span><span class="cn">?</span></div>`).join("")}</div>`
@@ -1125,8 +1231,8 @@ function renderAuction(fresh=false, newClue=false){
       ${stampHTML}
       ${evBox}
       <div class="hd"><span class="pos">${POS_NAME[p.pos]}</span><span class="count">Lote ${S.di+1} · quedan ${left}${(S.discards||[]).length?` · descartes: ${S.discards.length}`:""}</span></div>
-      <h2>${p.pos==="DT"?"¿Quién es este entrenador?":"¿Quién es este jugador?"}</h2>${p.c?`<span class="note" style="color:#3c5a4b">${p.pos==="DT"?"Banquillos que ha dirigido":"Recorrido de clubes"} · ${p.c.length} etapas</span>`:""}
-      ${p.c?clueHTML:`<ol class="clues">${clueHTML}</ol>`}
+      <h2>${p.pos==="DT"?"¿Quién es este entrenador?":"¿Quién es este jugador?"}</h2>${p.c?`<span class="note" style="color:#3c5a4b">${p.pos==="DT"?"Banquillos que ha dirigido":"Recorrido de clubes"} · ${p.c.length} etapas</span>`:""}${p.s?`<span class="note" style="color:#3c5a4b">Silueta · fase ${L.clues} de 4</span>`:""}
+      ${p.c||p.s?clueHTML:`<ol class="clues">${clueHTML}</ol>`}
       ${peekHTML}
       ${soldHTML}
     </article>
@@ -1370,6 +1476,64 @@ function renderLeague(){
   react();
 }
 function replayLeague(){ clearInterval(liveTimer); S.live=null; S.fx.forEach(f=>{f.res=null;f.live=false;}); S.played=0; S.playoff=null; S.lev=[]; S.phase="league"; save(); renderLeague(); }
+
+// ---------- Silueta dibujada (modo Siluetas) ----------
+// Fase 1: cuerpo y altura · 2: peinado, barba y detalles · 3: dorsal y pierna buena · 4: nacionalidad
+const HAIR_TXT = {calvo:"calvo",rapado:"rapado",corto:"pelo corto",rizos:"rizos",afro:"afro",largo:"melena larga",coleta:"coleta",cresta:"cresta",rastas:"rastas"};
+const ACC_TXT = {gafas:"gafas",cuello:"cuello de la camiseta subido",puro:"puro",libreta:"libreta en la mano"};
+const FOOT_TXT = {der:"derecha",izq:"izquierda",ambas:"las dos"};
+function siluSVG(p, st){
+  const s=p.s, F="#0f2219", C="#eef4ec", u=230*(s.h/185)/8, w={fino:.86,normal:1,fuerte:1.18}[s.b]||1, x=100, top=292-8*u;
+  const hr=.5*u, hy=top+hr, shY=top+1.45*u, sw=1.05*u*w, ww=.78*u*w, waY=top+(p.pos==="DT"?4.3:3.6)*u, hipY=top+4.6*u;
+  const legW=.34*u*w, legX=.36*u*w, foot=292;
+  const o=[];
+  // pelo detrás de la cabeza (afro, largo, rastas, coleta)
+  if(st>=2){
+    if(s.hair==="afro") o.push(`<circle cx="${x}" cy="${hy-hr*.35}" r="${hr*1.75}" fill="${F}"/>`);
+    if(s.hair==="largo") o.push(`<rect x="${x-hr*1.15}" y="${hy-hr*.6}" width="${hr*2.3}" height="${hr*2.4}" rx="${hr*.6}" fill="${F}"/>`);
+    if(s.hair==="coleta") o.push(`<ellipse cx="${x+hr*1.25}" cy="${hy+hr*.25}" rx="${hr*.32}" ry="${hr*.95}" transform="rotate(-20 ${x+hr*1.25} ${hy+hr*.25})" fill="${F}"/>`);
+    if(s.hair==="rastas") for(let i=-4;i<=4;i++) o.push(`<line x1="${x+i*hr*.25}" y1="${hy-hr*.5}" x2="${x+i*hr*.38}" y2="${hy+hr*(1.6+Math.abs(i)*.05)}" stroke="${F}" stroke-width="${hr*.22}" stroke-linecap="round"/>`);
+  }
+  // brazos, piernas, botas
+  [-1,1].forEach(d=>{
+    o.push(`<line x1="${x+d*sw*.92}" y1="${shY+.15*u}" x2="${x+d*(sw+.42*u)}" y2="${top+4.15*u}" stroke="${F}" stroke-width="${.34*u*w}" stroke-linecap="round"/>`);
+    o.push(`<rect x="${x+d*legX-legW/2}" y="${hipY-.2*u}" width="${legW}" height="${foot-hipY-.05*u}" rx="${legW*.4}" fill="${F}"/>`);
+    o.push(`<ellipse cx="${x+d*legX+d*.08*u}" cy="${foot-.08*u}" rx="${legW*.75}" ry="${.16*u}" fill="${F}"/>`);
+    if(p.pos==="POR") o.push(`<circle cx="${x+d*(sw+.42*u)}" cy="${top+4.2*u}" r="${.27*u}" fill="${F}"/>`);
+  });
+  // cuello, torso, pantalón
+  o.push(`<rect x="${x-hr*.42}" y="${hy+hr*.6}" width="${hr*.84}" height="${shY-hy}" fill="${F}"/>`);
+  o.push(`<path d="M${x-sw},${shY} L${x+sw},${shY} L${x+ww},${waY} L${x-ww},${waY} Z" fill="${F}" stroke="${F}" stroke-width="${.3*u}" stroke-linejoin="round"/>`);
+  if(p.pos!=="DT") o.push(`<rect x="${x-ww*1.06}" y="${waY-.05*u}" width="${ww*2.12}" height="${hipY-waY+.3*u}" rx="${.12*u}" fill="${F}"/>`);
+  // cabeza y pelo por encima
+  o.push(`<circle cx="${x}" cy="${hy}" r="${hr}" fill="${F}"/>`);
+  if(st>=2){
+    const cap=(ry,dy)=>o.push(`<ellipse cx="${x}" cy="${hy-hr*dy}" rx="${hr*1.06}" ry="${hr*ry}" fill="${F}"/>`);
+    if(s.hair==="rapado") cap(.62,.32);
+    if(["corto","largo","coleta","rastas"].includes(s.hair)) cap(.75,.45);
+    if(s.hair==="rizos") for(let a=-170;a<=-10;a+=32){ const r=a*Math.PI/180; o.push(`<circle cx="${x+Math.cos(r)*hr*.95}" cy="${hy+Math.sin(r)*hr*.95}" r="${hr*.38}" fill="${F}"/>`); }
+    if(s.hair==="cresta") o.push(`<ellipse cx="${x}" cy="${hy-hr*1.05}" rx="${hr*.28}" ry="${hr*.85}" fill="${F}"/>`);
+    if(s.beard) o.push(`<ellipse cx="${x}" cy="${hy+hr*.8}" rx="${hr*(s.beard>1?.72:.55)}" ry="${hr*(s.beard>1?.48:.3)}" fill="${F}"/>`);
+    if(s.acc==="gafas") o.push(`<g fill="none" stroke="${C}" stroke-width="1.6"><circle cx="${x-hr*.42}" cy="${hy-hr*.05}" r="${hr*.3}"/><circle cx="${x+hr*.42}" cy="${hy-hr*.05}" r="${hr*.3}"/><line x1="${x-hr*.12}" y1="${hy-hr*.05}" x2="${x+hr*.12}" y2="${hy-hr*.05}"/></g>`);
+    if(s.acc==="cuello") o.push(`<path d="M${x-hr*.95},${shY+.05*u} L${x-hr*.45},${hy+hr*.35} L${x},${shY+.25*u} L${x+hr*.45},${hy+hr*.35} L${x+hr*.95},${shY+.05*u}" fill="${F}" stroke="${C}" stroke-width="1.4"/>`);
+    if(s.acc==="puro") o.push(`<line x1="${x+hr*.2}" y1="${hy+hr*.5}" x2="${x+hr*1.1}" y2="${hy+hr*.62}" stroke="${C}" stroke-width="3" stroke-linecap="round"/>`);
+    if(s.acc==="libreta") o.push(`<rect x="${x+sw+.2*u}" y="${top+3.7*u}" width="${.5*u}" height="${.65*u}" fill="${C}" stroke="${F}" stroke-width="1.5"/>`);
+  }
+  if(p.pos==="DT") o.push(`<line x1="${x}" y1="${shY+.1*u}" x2="${x}" y2="${top+3*u}" stroke="${C}" stroke-width="${.13*u}" stroke-linecap="round"/>`);
+  if(st>=3&&p.pos!=="DT"){
+    o.push(`<text x="${x}" y="${top+3*u}" text-anchor="middle" font-family="Chivo Mono,monospace" font-weight="700" font-size="${1.05*u}" fill="${C}">${s.num??"?"}</text>`);
+    const bx = s.foot==="izq" ? x+legX+.75*u : x-legX-.75*u;  // vista de frente: su izquierda queda a nuestra derecha
+    if(s.foot!=="ambas") o.push(`<circle cx="${bx}" cy="${foot-.3*u}" r="${.32*u}" fill="${C}" stroke="${F}" stroke-width="2"/>`);
+  }
+  return `<svg class="silu" viewBox="0 0 200 300" role="img" aria-label="Silueta del ${p.pos==="DT"?"entrenador":"jugador"}">${o.join("")}</svg>`;
+}
+function siluHTML(p, st){
+  const s=p.s, f=[`<li><b>Altura</b> ${(s.h/100).toFixed(2).replace(".",",")} m · complexión ${s.b}</li>`];
+  f.push(st>=2?`<li><b>Look</b> ${HAIR_TXT[s.hair]}${s.beard?(s.beard>1?", barba":", barba de pocos días"):""}${s.acc?", "+ACC_TXT[s.acc]:""}</li>`:`<li class="hidden">Peinado y detalles ocultos</li>`);
+  if(p.pos!=="DT") f.push(st>=3?`<li><b>Dorsal</b> ${s.num??"varió mucho"} · pierna buena: ${FOOT_TXT[s.foot]}</li>`:`<li class="hidden">Dorsal y pierna buena ocultos</li>`);
+  f.push(st>=4?`<li><b>País</b> ${esc(s.nat)}</li>`:`<li class="hidden">Nacionalidad oculta</li>`);
+  return `<div class="siluwrap">${siluSVG(p,st)}<ul class="silufacts">${f.join("")}</ul></div>`;
+}
 
 // ---------- Partidos en directo (estilo manager) ----------
 const TICK_MS = 230;
